@@ -1,0 +1,22 @@
+## Interface: 120100
+## Title: Artisan's Codex |cff00ccffMidnight|r
+## Notes: Premium in-game profession guides for World of Warcraft: Midnight.|nLeveling paths, Specialization builds, Knowledge treasures and smart recommendations.
+## Author: YourName
+## Version: 0.1.0-alpha
+## SavedVariables: ArtisansCodexDB
+## X-Category: Professions
+
+Init.lua
+Core.lua
+Locales/enUS.lua
+
+# Data
+Data/Midnight/Alchemy.lua
+Data/Midnight/Tailoring.lua
+
+# Modules
+Modules/DataLoader.lua
+Modules/Dashboard.lua
+Modules/Leveling.lua
+Modules/Specializations.lua
+Modules/Knowledge.lua
