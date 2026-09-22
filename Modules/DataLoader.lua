@@ -1,7 +1,7 @@
 -- Artisan's Codex - DataLoader.lua
 -- Responsible for loading profession guide data
 
-local addonName, private = ...
+local _, private = ...
 private.DataLoader = {}
 local DataLoader = private.DataLoader
 
@@ -44,7 +44,8 @@ function DataLoader:Load()
     end
 
 
-    private:Print("DataLoader ready - " .. #private.Data.professions .. " professions registered")
+    private:Print("DataLoader ready - " .. loaded .. " guide(s) loaded, " ..
+                  #private.Data.professions .. " professions registered")
 end
 
 function DataLoader:GetProfessionList()

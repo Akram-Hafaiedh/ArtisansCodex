@@ -1,7 +1,7 @@
 -- Artisan's Codex - Midnight Alchemy Data
 -- Source: wow-professions.com (accurate as of patch 12.1)
 
-local addonName, private = ...
+local _, private = ...
 
 private.Data = private.Data or {}
 

@@ -1,5 +1,5 @@
 -- Artisan's Codex - English localization
-local addonName, private = ...
+local _, private = ...
 
 private.L = private.L or {}
 local L = private.L

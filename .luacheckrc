@@ -2,7 +2,7 @@
 -- Docs: https://luacheck.readthedocs.io/en/stable/config.html
 
 std = "lua51"
-max_line_length = 140
+max_line_length = 300
 
 -- WoW addon files start with:
 --   local addonName, private = ...

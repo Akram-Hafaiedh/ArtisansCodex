@@ -1,5 +1,5 @@
 -- Artisan's Codex - Knowledge.lua
-local addonName, private = ...
+local _, private = ...
 private.Knowledge = {}
 local Knowledge = private.Knowledge
 

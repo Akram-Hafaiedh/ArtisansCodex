@@ -1,5 +1,5 @@
 -- Artisan's Codex - Dashboard.lua
-local addonName, private = ...
+local _, private = ...
 private.Dashboard = {}
 local Dashboard = private.Dashboard
 

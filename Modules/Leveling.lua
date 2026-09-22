@@ -1,5 +1,5 @@
 -- Artisan's Codex - Leveling.lua
-local addonName, private = ...
+local _, private = ...
 private.Leveling = {}
 local Leveling = private.Leveling
 

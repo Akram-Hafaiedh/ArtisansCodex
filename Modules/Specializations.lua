@@ -1,5 +1,5 @@
 -- Artisan's Codex - Specializations.lua
-local addonName, private = ...
+local _, private = ...
 private.Specializations = {}
 local Specializations = private.Specializations
 
