@@ -61,7 +61,7 @@ private.Data.Tailoring = {
                     materials = {
                         { name = "Bright Linen Bolt", amount = 3, itemID = 239700 },
                         { name = "Silverleaf Thread", amount = 4, itemID = 251665 },
-                        { name = "Embroidery Floss", amount = 3, itemID = 251666 },
+                        { name = "Embroidery Floss", amount = 3, itemID = 251691 },
                     },
                 },
                 {
@@ -71,7 +71,7 @@ private.Data.Tailoring = {
                     materials = {
                         { name = "Bright Linen Bolt", amount = 2, itemID = 239700 },
                         { name = "Silverleaf Thread", amount = 3, itemID = 251665 },
-                        { name = "Embroidery Floss", amount = 1, itemID = 251666 },
+                        { name = "Embroidery Floss", amount = 1, itemID = 251691 },
                     },
                 },
                 {
@@ -108,7 +108,7 @@ private.Data.Tailoring = {
                     materials = {
                         { name = "Bright Linen Bolt", amount = 3, itemID = 239700 },
                         { name = "Silverleaf Thread", amount = 4, itemID = 251665 },
-                        { name = "Embroidery Floss", amount = 2, itemID = 251666 },
+                        { name = "Embroidery Floss", amount = 2, itemID = 251691 },
                     },
                 },
                 {
@@ -193,12 +193,22 @@ private.Data.Tailoring = {
             range = "50-100",
             path = "slow",
             recipes = {
-                { name = "Sunfire Silk Bolt (Daily CD)",    itemID = 239201 },
-                { name = "Arcanoweave Bolt (Daily CD)",     itemID = 239198 },
+                { name = "Sunfire Silk Bolt (Daily CD)", itemID = 239201 },
+                { name = "Arcanoweave Bolt (Daily CD)",  itemID = 239198 },
             },
             quantity = 1,
             materials = {},
-            note = "Put 5 points into Nimble Needlework root, then pick one sub-spec to unlock a daily bolt. Gives 2 skill up to 80. Very profitable.",
+            note = "Spend 5 Knowledge Points in the Nimble Needlework root node, " ..
+                   "then pick one of the two sub-specs. This unlocks a daily bolt CD.\n\n" ..
+                   "Each daily craft gives 2 skill points up to skill 80. Expect to " ..
+                   "hit 80 in about two weeks with consistent daily crafting.\n\n" ..
+                   "Bolt options and their materials:\n" ..
+                   "• Sunfire Silk Bolt — 4x Mote of Light, 5x Sunfire Silk, 6x Imbued Bright Linen Bolt\n" ..
+                   "• Arcanoweave Bolt — 4x Mote of Wild Magic, 5x Arcanoweave, 6x Imbued Bright Linen Bolt\n\n" ..
+                   "|cffFFD700Alternatives for 90-100:|r Once you're in the 90s you'll " ..
+                   "probably have epic recipes from vendors or your spec that still give " ..
+                   "skill. Patron Crafting Orders also work here — they're random, but " ..
+                   "frequent enough that only a few are needed to finish the range.",
             difficulty = "green",
             isRecommended = true,
             specAction = "open_tree",
@@ -225,19 +235,30 @@ private.Data.Tailoring = {
             range = "65-90",
             path = "rush",
             header = "The expensive grind",
-            recipes = {
-                { name = "Sunfire Silk Lining",   itemID = 240164 },
-                { name = "Arcanoweave Lining",    itemID = 240166 },
-            },
             quantity = 28,
-            materials = {
-                { name = "Sunfire Silk",        amount = 168, itemID = 237015 },
-                { name = "Arcanoweave",         amount = 168, itemID = 237016 },
-                { name = "Sunfire Silk Bolt",   amount = 56,  itemID = 239201 },
-                { name = "Arcanoweave Bolt",    amount = 56,  itemID = 239198 },
-            },
-            note = "Recipes are drops – buy from AH. Turns yellow at 80.",
             difficulty = "yellow",
+            alternatives = {
+                {
+                    key = "sunfire",
+                    label = "Sunfire Silk Lining",
+                    itemID = 240164,
+                    materials = {
+                        { name = "Sunfire Silk",      amount = 168, itemID = 237015 },
+                        { name = "Sunfire Silk Bolt", amount = 56,  itemID = 239201 },
+                    },
+                },
+                {
+                    key = "arcanoweave",
+                    label = "Arcanoweave Lining",
+                    itemID = 240166,
+                    materials = {
+                        { name = "Arcanoweave",      amount = 168, itemID = 237016 },
+                        { name = "Arcanoweave Bolt", amount = 56,  itemID = 239198 },
+                    },
+                },
+            },
+            note = "Recipes are drops — buy from AH. Turns yellow at 80. " ..
+                   "Pick whichever lining is cheaper on your server.",
         },
         {
             range = "90-100",
@@ -246,7 +267,7 @@ private.Data.Tailoring = {
             recipe = "Elegant Artisan Profession Gear",
             quantity = 13,
             materials = {
-                { name = "Mote of Light",     amount = 67,  itemID = 238540 },
+                { name = "Mote of Light",     amount = 67,  itemID = 236949 },
                 { name = "Sunfire Silk Bolt", amount = 107, itemID = 239201 },
                 { name = "Radiant Shard",     amount = 40,  itemID = 243603 },
             },
@@ -258,7 +279,7 @@ private.Data.Tailoring = {
                     itemID = 239636,
                     quantity = 1,
                     materials = {
-                        { name = "Mote of Light", amount = 5, itemID = 238540 },
+                        { name = "Mote of Light", amount = 5, itemID = 236949 },
                         { name = "Sunfire Silk Bolt", amount = 8, itemID = 239201 },
                         { name = "Radiant Shard", amount = 3, itemID = 243603 },
                     },
@@ -269,7 +290,7 @@ private.Data.Tailoring = {
                     itemID = 239637,
                     quantity = 1,
                     materials = {
-                        { name = "Mote of Light", amount = 5, itemID = 238540 },
+                        { name = "Mote of Light", amount = 5, itemID = 236949 },
                         { name = "Sunfire Silk Bolt", amount = 8, itemID = 239201 },
                         { name = "Radiant Shard", amount = 3, itemID = 243603 },
                     },
@@ -280,7 +301,7 @@ private.Data.Tailoring = {
                     itemID = 239638,
                     quantity = 1,
                     materials = {
-                        { name = "Mote of Light", amount = 5, itemID = 238540 },
+                        { name = "Mote of Light", amount = 5, itemID = 236949 },
                         { name = "Sunfire Silk Bolt", amount = 8, itemID = 239201 },
                         { name = "Radiant Shard", amount = 3, itemID = 243603 },
                     },
@@ -290,7 +311,7 @@ private.Data.Tailoring = {
                     itemID = 239640,
                     quantity = 1,
                     materials = {
-                        { name = "Mote of Light", amount = 5, itemID = 238540 },
+                        { name = "Mote of Light", amount = 5, itemID = 236949 },
                         { name = "Sunfire Silk Bolt", amount = 8, itemID = 239201 },
                         { name = "Radiant Shard", amount = 3, itemID = 243603 },
                     },
@@ -300,7 +321,7 @@ private.Data.Tailoring = {
                     itemID = 239641,
                     quantity = 1,
                     materials = {
-                        { name = "Mote of Light", amount = 5, itemID = 238540 },
+                        { name = "Mote of Light", amount = 5, itemID = 236949 },
                         { name = "Sunfire Silk Bolt", amount = 8, itemID = 239201 },
                         { name = "Radiant Shard", amount = 3, itemID = 243603 },
                     },
@@ -310,7 +331,7 @@ private.Data.Tailoring = {
                     itemID = 239642,
                     quantity = 1,
                     materials = {
-                        { name = "Mote of Light", amount = 5, itemID = 238540 },
+                        { name = "Mote of Light", amount = 5, itemID = 236949 },
                         { name = "Sunfire Silk Bolt", amount = 8, itemID = 239201 },
                         { name = "Radiant Shard", amount = 3, itemID = 243603 },
                     },

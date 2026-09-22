@@ -84,7 +84,7 @@ private.Data.Alchemy = {
             quantity = 1,
             materials = {
                 { name = "Stabilized Derivate", amount = 2, itemID = 241020 },
-                { name = "Mote of Light", amount = 2, itemID = 238540 },
+                { name = "Mote of Light", amount = 2, itemID = 236949 },
                 { name = "Refreshing Serum", amount = 5, itemID = 240985 },
             },
             note = "Required for transmutes. Previous expansion Philosopher's Stone also works.",
@@ -118,7 +118,7 @@ private.Data.Alchemy = {
             itemID = 241050,
             quantity = 80,
             materials = {
-                { name = "Mote of Light", amount = 80, itemID = 238540 },
+                { name = "Mote of Light", amount = 80, itemID = 236949 },
                 { name = "Tranquility Bloom", amount = 640, itemID = 236767 },
                 { name = "Azeroot", amount = 240, itemID = 236790 },
                 { name = "Argentleaf", amount = 240, itemID = 236795 },

@@ -749,6 +749,10 @@ function addon:BuildLeveling()
         end
 
         btn:SetScript("OnClick", function()
+            if self.levelingScrollFrame then
+                self.levelingSubTabOffsets[self.levelingSubTab] =
+                    self.levelingScrollFrame:GetVerticalScroll() or 0
+            end
             self.selectedLevelingProf = name
             self:BuildLeveling()
         end)
@@ -898,12 +902,72 @@ function addon:BuildLeveling()
 
 
     -- ----------------------------------------------------------
+    -- SUB-TAB BAR — Steps / Shopping List
+    -- ----------------------------------------------------------
+    self.levelingSubTab = self.levelingSubTab or "steps"
+    self.levelingSubTabOffsets = self.levelingSubTabOffsets or { steps = 0, shopping = 0 }
+
+    local subTabBar = CreateFrame("Frame", nil, page)
+    subTabBar:SetPoint("TOPLEFT", 215, -158)
+    subTabBar:SetSize(400, 28)
+
+    local function MakeSubTab(key, text, xOff)
+        local btn = CreateFrame("Button", nil, subTabBar, "BackdropTemplate")
+        btn:SetSize(130, 28)
+        btn:SetPoint("LEFT", xOff, 0)
+        btn:SetBackdrop({
+            bgFile   = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            edgeSize = 12,
+            insets   = { left = 2, right = 2, top = 2, bottom = 2 }
+        })
+
+        local lbl = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        lbl:SetPoint("CENTER")
+        lbl:SetText(text)
+        btn.label = lbl
+
+        local isActive = (key == self.levelingSubTab)
+        if isActive then
+            btn:SetBackdropColor(0.35, 0.28, 0.10, 1)
+            btn:SetBackdropBorderColor(0.9, 0.75, 0.25, 1)
+            lbl:SetTextColor(1, 0.9, 0.5)
+        else
+            btn:SetBackdropColor(0.12, 0.13, 0.18, 1)
+            btn:SetBackdropBorderColor(0.4, 0.35, 0.2, 0.8)
+            lbl:SetTextColor(0.7, 0.7, 0.7)
+        end
+
+        btn:SetScript("OnClick", function()
+            if self.levelingSubTab == key then return end
+            -- Save the current view's scroll offset
+            if self.levelingScrollFrame then
+                self.levelingSubTabOffsets[self.levelingSubTab] =
+                    self.levelingScrollFrame:GetVerticalScroll() or 0
+            end
+            self.levelingSubTab = key
+            self:BuildLeveling()
+        end)
+
+        return btn
+    end
+
+    MakeSubTab("steps",    "Steps",         0)
+    MakeSubTab("shopping", "Shopping List", 136)
+
+    -- ---- Branch: render shopping list OR steps ----
+    if self.levelingSubTab == "shopping" then
+        self:RenderShoppingListBody(page, profData, -192)
+        return
+    end
+
+    -- ----------------------------------------------------------
     -- SCROLLABLE STEPS AREA
     -- ----------------------------------------------------------
     local scrollFrame = CreateFrame("ScrollFrame", nil, page, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", 215, -185)
+    scrollFrame:SetPoint("TOPLEFT", 215, -192)
     scrollFrame:SetPoint("BOTTOMRIGHT", -35, 15)
-    self.levelingScrollFrame = scrollFrame   -- so path buttons can read current scroll offset
+    self.levelingScrollFrame = scrollFrame
 
     local content = CreateFrame("Frame", nil, scrollFrame)
     content:SetWidth(scrollFrame:GetWidth() - 10)
@@ -936,7 +1000,7 @@ function addon:BuildLeveling()
             local headerH  = 30
             local tabsH    = 50
             local topPad   = 10
-            local botPad   = 10
+            local botPad   = 20
             local stepGap  = 6
             local hdrStrip = 22   -- divider strip rendered above a step with .header
 
@@ -969,6 +1033,10 @@ function addon:BuildLeveling()
                     local rH = 106
                     if s.crafts and #s.crafts > 0 then
                         rH = 60 + math.ceil(#s.crafts / 3.5) * 22 + 30
+                    end
+                    -- Must match the row-height bump in the render code
+                    if s.specAction == "open_tree" then
+                        rH = rH + 40
                     end
                     local hdrExtra = (s.header and s.header ~= "") and hdrStrip or 0
                     containerHeight = containerHeight + rH + hdrExtra + stepGap
@@ -1039,7 +1107,7 @@ function addon:BuildLeveling()
 
                 btn:SetScript("OnClick", function()
                     if self.levelingScrollFrame then
-                        self.levelingScrollOffset = self.levelingScrollFrame:GetVerticalScroll() or 0
+                        self.levelingSubTabOffsets.steps = self.levelingScrollFrame:GetVerticalScroll() or 0
                     end
                     self.selectedPath = p.key
                     self:BuildLeveling()
@@ -1529,10 +1597,10 @@ function addon:BuildLeveling()
 
     content:SetHeight(math.abs(yOffset) + 20)
 
-    -- Restore scroll position (e.g., after switching paths)
-    if self.levelingScrollOffset and self.levelingScrollOffset > 0 then
-        scrollFrame:SetVerticalScroll(self.levelingScrollOffset)
-        self.levelingScrollOffset = nil   -- consume it, don't leak into next rebuild
+    -- Restore scroll position for the steps sub-tab
+    local offset = self.levelingSubTabOffsets and self.levelingSubTabOffsets.steps or 0
+    if offset > 0 then
+        scrollFrame:SetVerticalScroll(offset)
     end
 
     scrollFrame:EnableMouseWheel(true)
@@ -1911,4 +1979,216 @@ function addon:BuildSpecializations()
         applyBtn:SetPoint("BOTTOMLEFT", 12, 10)
         applyBtn:SetText("View Path")
     end
+end
+
+-- ============================================================
+-- SHOPPING LIST ENGINE
+-- Aggregates materials across the whole guide, respecting the
+-- currently selected fork path. Subtracts items already owned
+-- (bags, bank, reagent bank, warband bank).
+-- ============================================================
+function addon:CollectAllMaterials(profData)
+    local totals = {}
+    local order  = {}
+
+    local function addItem(itemID, name, amount)
+        if not name or not amount or amount <= 0 then return end
+        local key = (itemID and itemID ~= 0) and itemID or name
+        if not totals[key] then
+            totals[key] = { itemID = itemID, name = name, required = 0 }
+            order[#order + 1] = key
+        end
+        totals[key].required = totals[key].required + amount
+    end
+
+    for _, entry in ipairs(profData.leveling or {}) do
+        -- Skip fork containers (they hold no materials of their own)
+        if entry.type ~= "fork" then
+            -- Respect the currently selected path
+            local include = true
+            if entry.path and entry.path ~= self.selectedPath then
+                include = false
+            end
+
+            if include then
+                local hasStepMats = entry.materials and #entry.materials > 0
+                if hasStepMats then
+                    -- Step-level materials take priority (used for ranges
+                    -- where the guide gives you one total per material)
+                    for _, mat in ipairs(entry.materials) do
+                        addItem(mat.itemID, mat.name, mat.amount or 1)
+                    end
+                else
+                    -- Fall back to summing craft materials (used for
+                    -- First-Crafts steps and other multi-craft lists)
+                    for _, craft in ipairs(entry.crafts or {}) do
+                        local q = craft.quantity or 1
+                        for _, mat in ipairs(craft.materials or {}) do
+                            addItem(mat.itemID, mat.name, (mat.amount or 1) * q)
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- Subtract owned; build final list
+    local list = {}
+    for _, key in ipairs(order) do
+        local e = totals[key]
+        e.owned     = self:GetItemCount(e.itemID)
+        e.remaining = math.max(0, e.required - e.owned)
+        list[#list + 1] = e
+    end
+
+    -- Sort: still-needed first (by descending remaining), then complete
+    table.sort(list, function(a, b)
+        local aMiss = a.remaining > 0
+        local bMiss = b.remaining > 0
+        if aMiss ~= bMiss then return aMiss end
+        if aMiss and a.remaining ~= b.remaining then
+            return a.remaining > b.remaining
+        end
+        return (a.name or "") < (b.name or "")
+    end)
+
+    return list
+end
+
+-- ============================================================
+-- SHOPPING LIST VIEW
+-- ============================================================
+function addon:RenderShoppingListBody(page, profData, topY)
+    local scrollFrame = CreateFrame("ScrollFrame", nil, page, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 215, topY)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -35, 15)
+    self.levelingScrollFrame = scrollFrame
+
+    local content = CreateFrame("Frame", nil, scrollFrame)
+    content:SetWidth(scrollFrame:GetWidth() - 10)
+    content:SetHeight(1)
+    scrollFrame:SetScrollChild(content)
+
+    local list = self:CollectAllMaterials(profData)
+
+    if #list == 0 then
+        local empty = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        empty:SetPoint("TOPLEFT", 20, -20)
+        empty:SetText("No materials found for this guide.")
+        content:SetHeight(60)
+    else
+        -- Column headers
+        local header = CreateFrame("Frame", nil, content)
+        header:SetPoint("TOPLEFT", 8, -8)
+        header:SetSize(700, 24)
+
+        local hName = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        hName:SetPoint("LEFT", 34, 0)
+        hName:SetText("|cff888888MATERIAL|r")
+
+        local hHave = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        hHave:SetPoint("RIGHT", -190, 0)
+        hHave:SetText("|cff888888HAVE|r")
+
+        local hNeed = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        hNeed:SetPoint("RIGHT", -12, 0)
+        hNeed:SetText("|cff888888NEEDED|r")
+
+        local y          = -40
+        local rowHeight  = 32
+        local rowGap     = 4
+        local missing    = 0
+        local complete   = 0
+
+        for _, mat in ipairs(list) do
+            local row = CreateFrame("Frame", nil, content, "BackdropTemplate")
+            row:SetSize(700, rowHeight)
+            row:SetPoint("TOPLEFT", 8, y)
+            row:SetBackdrop({
+                bgFile   = "Interface\\Buttons\\WHITE8x8",
+                edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+                edgeSize = 10,
+                insets   = { left = 2, right = 2, top = 2, bottom = 2 }
+            })
+
+            local isComplete = (mat.remaining == 0)
+            if isComplete then
+                row:SetBackdropColor(0.10, 0.14, 0.11, 0.9)
+                row:SetBackdropBorderColor(0.25, 0.55, 0.25, 0.7)
+                complete = complete + 1
+            else
+                row:SetBackdropColor(0.11, 0.12, 0.18, 0.95)
+                row:SetBackdropBorderColor(0.4, 0.35, 0.2, 0.8)
+                missing = missing + 1
+            end
+
+            -- Item icon
+            local icon = row:CreateTexture(nil, "ARTWORK")
+            icon:SetSize(20, 20)
+            icon:SetPoint("LEFT", 10, 0)
+            icon:SetTexture(self:GetItemIcon(mat.itemID))
+            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+
+            -- Name
+            local name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            name:SetPoint("LEFT", icon, "RIGHT", 8, 0)
+            name:SetText(mat.name or "?")
+            if isComplete then
+                name:SetTextColor(0.55, 0.55, 0.55)
+            end
+
+            -- HAVE (owned / required)
+            local have = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            have:SetPoint("RIGHT", -190, 0)
+            have:SetText(string.format("%d / %d", mat.owned, mat.required))
+            have:SetTextColor(0.7, 0.7, 0.7)
+
+            -- NEEDED (highlighted)
+            local needed = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            needed:SetPoint("RIGHT", -12, 0)
+            if isComplete then
+                needed:SetText("|cff00ff00✓ Complete|r")
+            else
+                needed:SetText("|cffffd700×" .. mat.remaining .. "|r")
+            end
+
+            -- Hover tooltip on the row
+            row:EnableMouse(true)
+            if mat.itemID and mat.itemID ~= 0 then
+                row:SetScript("OnEnter", function(selfRow)
+                    GameTooltip:SetOwner(selfRow, "ANCHOR_RIGHT")
+                    GameTooltip:SetItemByID(mat.itemID)
+                    GameTooltip:Show()
+                end)
+                row:SetScript("OnLeave", function()
+                    GameTooltip:Hide()
+                end)
+            end
+
+            y = y - rowHeight - rowGap
+        end
+
+        -- Summary line
+        local summary = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        summary:SetPoint("TOPLEFT", 8, y - 8)
+        summary:SetText(string.format(
+            "|cff888888%d missing · %d complete|r", missing, complete))
+
+        content:SetHeight(math.abs(y) + 40)
+    end
+
+    -- Restore the shopping sub-tab's last scroll offset
+    local offset = self.levelingSubTabOffsets and self.levelingSubTabOffsets.shopping or 0
+    if offset > 0 then
+        scrollFrame:SetVerticalScroll(offset)
+    end
+
+    -- Mouse-wheel scroll speed
+    scrollFrame:EnableMouseWheel(true)
+    scrollFrame:SetScript("OnMouseWheel", function(f, delta)
+        local current   = f:GetVerticalScroll()
+        local maxScroll = f:GetVerticalScrollRange()
+        local newScroll = math.min(maxScroll, math.max(0, current - (delta * 30)))
+        f:SetVerticalScroll(newScroll)
+    end)
 end
