@@ -1,6 +1,8 @@
 -- Artisan's Codex - Core.lua
 -- Main logic of the addon
 
+-- luacheck: globals ArtisansCodexDB
+
 local addonName, private = ...
 local addon = private.addon
 
@@ -47,6 +49,30 @@ function addon:GetItemIcon(itemID)
     if not itemID then return "Interface\\Icons\\INV_Misc_QuestionMark" end
     local icon = C_Item.GetItemIconByID(itemID)
     return icon or "Interface\\Icons\\INV_Misc_QuestionMark"
+end
+
+-- ============================================================
+-- PROFESSION HELPERS
+-- ============================================================
+-- Checks whether the CURRENT character has actually trained the given
+-- profession name (e.g. "Tailoring"), and if so returns its skillLineID.
+-- GetProfessions() only reflects the logged-in character, so a profession
+-- can be a valid guide topic in the addon's data without being learned.
+function addon:GetLearnedSkillLineID(professionName)
+    local prof1, prof2 = GetProfessions()
+    for _, idx in ipairs({ prof1, prof2 }) do
+        if idx then
+            local name, _, _, _, _, _, skillLine = GetProfessionInfo(idx)
+            if name == professionName then
+                return skillLine
+            end
+        end
+    end
+    return nil
+end
+
+function addon:IsProfessionLearned(professionName)
+    return self:GetLearnedSkillLineID(professionName) ~= nil
 end
 
 -- ============================================================
@@ -211,8 +237,8 @@ function addon:CreateMainFrame()
 
         tab.key = tabInfo.key
 
-        tab:SetScript("OnClick", function(self)
-            addon:SelectTab(self.key)
+        tab:SetScript("OnClick", function(btn)
+            addon:SelectTab(btn.key)
         end)
 
         frame.tabs[tabInfo.key] = tab
@@ -250,10 +276,14 @@ function addon:CreateMainFrame()
         label:SetJustifyH("CENTER")
     end
 
-    AddPlaceholder(frame.tabContents["dashboard"],      "|cffFFD700Dashboard|r\n\nComing soon...\n\nThis will show smart recommendations")
-    AddPlaceholder(frame.tabContents["leveling"],       "|cffFFD700Leveling Guide|r\n\nComing soon...\n\nStep-by-step profession leveling")
-    AddPlaceholder(frame.tabContents["specializations"], "|cffFFD700Specializations|r\n\nComing soon...\n\nInteractive talent trees + builds")
-    AddPlaceholder(frame.tabContents["knowledge"],      "|cffFFD700Knowledge & Treasures|r\n\nComing soon...\n\nTreasures + weekly knowledge tracking")
+    AddPlaceholder(frame.tabContents["dashboard"],
+        "|cffFFD700Dashboard|r\n\nComing soon...\n\nThis will show smart recommendations")
+    AddPlaceholder(frame.tabContents["leveling"],
+        "|cffFFD700Leveling Guide|r\n\nComing soon...\n\nStep-by-step profession leveling")
+    AddPlaceholder(frame.tabContents["specializations"],
+        "|cffFFD700Specializations|r\n\nComing soon...\n\nInteractive talent trees + builds")
+    AddPlaceholder(frame.tabContents["knowledge"],
+        "|cffFFD700Knowledge & Treasures|r\n\nComing soon...\n\nTreasures + weekly knowledge tracking")
 
     frame:Hide()
     self.mainFrame = frame
@@ -341,8 +371,8 @@ function addon:CreateMinimapButton()
         addon:ToggleMainFrame()
     end)
 
-    button:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+    button:SetScript("OnEnter", function(btn)
+        GameTooltip:SetOwner(btn, "ANCHOR_LEFT")
         GameTooltip:AddLine("|cffFFD700Artisan's Codex|r")
         GameTooltip:AddLine("Click to open", 1, 1, 1)
         GameTooltip:Show()
@@ -431,11 +461,11 @@ function addon:ShowSpecReminder(targetName, targetIcon)
 
     -- === Auto-dismiss on profession close ===
     f:RegisterEvent("TRADE_SKILL_CLOSE")
-    f:SetScript("OnEvent", function(self, event)
+    f:SetScript("OnEvent", function(frame, event)
         if event == "TRADE_SKILL_CLOSE" then
-            self:Hide()
-            self:UnregisterAllEvents()
-            if addon.specReminder == self then
+            frame:Hide()
+            frame:UnregisterAllEvents()
+            if addon.specReminder == frame then
                 addon.specReminder = nil
             end
         end
@@ -567,7 +597,8 @@ function addon:BuildDashboard()
     recText:SetPoint("TOPLEFT", 25, -120)
     recText:SetWidth(430)
     recText:SetJustifyH("LEFT")
-    recText:SetText("You have 14 unspent Knowledge Points in Alchemy.\n\nRecommended next node:\n|cffFFD700Elixir Experimentation|r\n\nThis node greatly improves potion and flask efficiency.")
+    recText:SetText("You have 14 unspent Knowledge Points in Alchemy.\n\nRecommended next node:\n" ..
+        "|cffFFD700Elixir Experimentation|r\n\nThis node greatly improves potion and flask efficiency.")
 
     local viewTreeBtn = CreateFrame("Button", nil, centerCard, "UIPanelButtonTemplate")
     viewTreeBtn:SetSize(180, 28)
@@ -733,6 +764,7 @@ function addon:BuildLeveling()
         })
 
         local isSelected = (name == self.selectedLevelingProf)
+        local isLearned  = self:IsProfessionLearned(name)
         if isSelected then
             btn:SetBackdropColor(0.35, 0.28, 0.10, 1)
             btn:SetBackdropBorderColor(0.9, 0.75, 0.25, 1)
@@ -741,11 +773,21 @@ function addon:BuildLeveling()
             btn:SetBackdropBorderColor(0.35, 0.30, 0.18, 0.8)
         end
 
+        -- Shift the name up a touch when we need room for the "Not
+        -- learned" tag underneath it.
         local text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        text:SetPoint("CENTER")
+        text:SetPoint("CENTER", 0, isLearned and 0 or 5)
         text:SetText(name)
         if isSelected then
             text:SetTextColor(1, 0.9, 0.5)
+        elseif not isLearned then
+            text:SetTextColor(0.6, 0.55, 0.55)
+        end
+
+        if not isLearned then
+            local tag = btn:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+            tag:SetPoint("TOP", text, "BOTTOM", 0, -2)
+            tag:SetText("Not learned")
         end
 
         btn:SetScript("OnClick", function()
@@ -906,6 +948,7 @@ function addon:BuildLeveling()
     -- ----------------------------------------------------------
     self.levelingSubTab = self.levelingSubTab or "steps"
     self.levelingSubTabOffsets = self.levelingSubTabOffsets or { steps = 0, shopping = 0 }
+    self.selectedAlternatives = self.selectedAlternatives or {}
 
     local subTabBar = CreateFrame("Frame", nil, page)
     subTabBar:SetPoint("TOPLEFT", 215, -158)
@@ -974,6 +1017,23 @@ function addon:BuildLeveling()
     content:SetHeight(1)
     scrollFrame:SetScrollChild(content)
 
+    -- Measures how tall a wrapped FontString will render at a given width,
+    -- using a throwaway probe. Used so row/container heights can grow to
+    -- fit long notes instead of letting them overflow into whatever is
+    -- anchored below (this is what was causing the overlapping text).
+    local SINGLE_LINE_H = 14
+    local function MeasureNoteHeight(text, width)
+        if not text or text == "" then return 0 end
+        local probe = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        probe:SetWidth(width)
+        probe:SetJustifyH("LEFT")
+        probe:SetText(text)
+        local h = probe:GetStringHeight() or SINGLE_LINE_H
+        probe:Hide()
+        probe:SetParent(nil)
+        return h
+    end
+
     if not profData or not profData.leveling then
         local noData = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         noData:SetPoint("TOPLEFT", 20, -20)
@@ -1034,9 +1094,15 @@ function addon:BuildLeveling()
                     if s.crafts and #s.crafts > 0 then
                         rH = 60 + math.ceil(#s.crafts / 3.5) * 22 + 30
                     end
-                    -- Must match the row-height bump in the render code
+                    if s.alternatives and #s.alternatives > 0 then
+                        rH = rH + 32   -- extra row for the pill selector
+                    end
                     if s.specAction == "open_tree" then
                         rH = rH + 40
+                    end
+                    if s.note and s.note ~= "" then
+                        local noteH = MeasureNoteHeight(s.note, 684 - 100)
+                        rH = rH + math.max(0, noteH - SINGLE_LINE_H)
                     end
                     local hdrExtra = (s.header and s.header ~= "") and hdrStrip or 0
                     containerHeight = containerHeight + rH + hdrExtra + stepGap
@@ -1141,9 +1207,18 @@ function addon:BuildLeveling()
             end
 
             if showStep then
+                -- rowWidth only depends on whether this step lives inside an
+                -- open path container, so resolve it before rowHeight (the
+                -- note-height measurement below needs it).
+                local rowWidth = (step.path and activeContainer) and 684 or 700
+
                 local rowHeight = 106
                 if step.crafts and #step.crafts > 0 then
                     rowHeight = 60 + math.ceil(#step.crafts / 3.5) * 22 + 30
+                end
+
+                if step.alternatives and #step.alternatives > 0 then
+                    rowHeight = rowHeight + 32
                 end
 
                 -- Reserve extra vertical space for the spec footer if present
@@ -1151,14 +1226,20 @@ function addon:BuildLeveling()
                     rowHeight = rowHeight + 40
                 end
 
+                -- Reserve extra vertical space for notes that wrap past one
+                -- line, so the footer/next row don't overlap the note text.
+                if step.note and step.note ~= "" then
+                    local noteH = MeasureNoteHeight(step.note, rowWidth - 100)
+                    rowHeight = rowHeight + math.max(0, noteH - SINGLE_LINE_H)
+                end
+
                 -- Choose parent + Y position:
                 --   - if this step declares a path AND a container is open,
                 --     it lives inside the container
                 --   - otherwise it goes on the raw scroll content
-                local parent, renderY, rowWidth
+                local parent, renderY
                 if step.path and activeContainer then
                     parent    = activeContainer
-                    rowWidth  = 684
 
                     -- Optional sub-header divider above this step
                     if step.header and step.header ~= "" then
@@ -1179,7 +1260,6 @@ function addon:BuildLeveling()
                 else
                     parent    = content
                     renderY   = yOffset
-                    rowWidth  = 700
                 end
 
                 local row = CreateFrame("Frame", nil, parent, "BackdropTemplate")
@@ -1200,129 +1280,251 @@ function addon:BuildLeveling()
                 range:SetText("|cffFFD700" .. (step.range or "") .. "|r")
 
                 -- ============================================================
-                -- RECIPE NAME + CRAFTED ITEM ICON(S)
-                -- ============================================================
-                local recipeY = -28
-                local recipeX = 12
-
-                if step.quantity and step.quantity > 1 then
-                    local quantityText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-                    quantityText:SetPoint("TOPLEFT", recipeX, recipeY)
-                    quantityText:SetText(step.quantity .. "x")
-                    quantityText:SetTextColor(1, 1, 1)
-                    recipeX = recipeX + quantityText:GetStringWidth() + 5
-                end
-
-                local function AddRecipeEntry(name, itemID)
-                    if itemID then
-                        local icon = row:CreateTexture(nil, "ARTWORK")
-                        icon:SetSize(16, 16)
-                        icon:SetPoint("TOPLEFT", recipeX, recipeY + 1)
-                        icon:SetTexture(addon:GetItemIcon(itemID))
-                        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-                        recipeX = recipeX + 20
-                    end
-                    local txt = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-                    txt:SetPoint("TOPLEFT", recipeX, recipeY)
-                    txt:SetText(name or "")
-                    recipeX = recipeX + txt:GetStringWidth() + 16
-                end
-
-                if step.recipes and #step.recipes > 0 then
-                    for idx, r in ipairs(step.recipes) do
-                        if idx > 1 then
-                            local sep = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-                            sep:SetPoint("TOPLEFT", recipeX - 12, recipeY)
-                            sep:SetText("|cff666666•|r")
-                        end
-                        AddRecipeEntry(r.name, r.itemID)
-                    end
-                else
-                    AddRecipeEntry(step.recipe, step.itemID)
-                    if not step.itemID and step.itemIDs then
-                        for _, id in ipairs(step.itemIDs) do
-                            local icon = row:CreateTexture(nil, "ARTWORK")
-                            icon:SetSize(16, 16)
-                            icon:SetPoint("TOPLEFT", recipeX, recipeY + 1)
-                            icon:SetTexture(addon:GetItemIcon(id))
-                            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-                            recipeX = recipeX + 18
-                        end
-                    end
-                end
-
-                -- ============================================================
-                -- MATERIALS or DETAILED CRAFTS
+                -- RECIPE + MATERIALS
+                -- Two modes:
+                --   1. Step has `alternatives` → render pill selector,
+                --      then the selected alternative's materials.
+                --   2. Normal step → recipe name + icon + materials.
                 -- ============================================================
                 local contentY = -50
                 local hasContent = false
 
-                if step.crafts and #step.crafts > 0 then
-                    hasContent = true
-                    local startX = 12
-                    local wrapX = startX
-                    local wrapY = contentY
-                    local maxWidth = rowWidth - 20
-
-                    for _, craft in ipairs(step.crafts) do
-                        local amountText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                        amountText:SetText((craft.quantity or 1) .. "x")
-                        amountText:SetTextColor(0.9, 0.9, 0.9)
-
-                        local nameText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                        nameText:SetText(craft.name)
-                        nameText:SetTextColor(0.75, 0.75, 0.75)
-
-                        local neededWidth = amountText:GetStringWidth() + 22 + nameText:GetStringWidth() + 12
-
-                        if wrapX + neededWidth > maxWidth then
-                            wrapX = startX
-                            wrapY = wrapY - 20
-                        end
-
-                        amountText:SetPoint("TOPLEFT", wrapX, wrapY)
-                        wrapX = wrapX + amountText:GetStringWidth() + 4
-
-                        local icon = row:CreateTexture(nil, "ARTWORK")
-                        icon:SetSize(16, 16)
-                        icon:SetPoint("TOPLEFT", wrapX, wrapY + 1)
-                        icon:SetTexture(addon:GetItemIcon(craft.itemID))
-                        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-                        wrapX = wrapX + 18
-
-                        nameText:SetPoint("TOPLEFT", wrapX, wrapY)
-                        wrapX = wrapX + nameText:GetStringWidth() + 12
+                if step.alternatives and #step.alternatives > 0 then
+                    -- ---- Alternative selection state ----
+                    local altKey = (profData.name or "?") .. "|" ..
+                                   (step.path or "shared") .. "|" .. (step.range or "?")
+                    local selectedKey = self.selectedAlternatives[altKey]
+                    if not selectedKey then
+                        selectedKey = step.alternatives[1].key
+                        self.selectedAlternatives[altKey] = selectedKey
                     end
 
-                    contentY = wrapY
-                elseif step.materials and #step.materials > 0 then
-                    hasContent = true
-                    local xOffset = 12
+                    local selectedAlt
+                    for _, alt in ipairs(step.alternatives) do
+                        if alt.key == selectedKey then selectedAlt = alt; break end
+                    end
+                    if not selectedAlt then selectedAlt = step.alternatives[1] end
 
-                    local matsLabel = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-                    matsLabel:SetPoint("TOPLEFT", xOffset, contentY)
-                    matsLabel:SetText("|cff888888Mats:|r")
-                    xOffset = xOffset + matsLabel:GetStringWidth() + 8
+                    -- ---- Quantity ----
+                    local altY = -28
+                    local altX = 12
+                    if step.quantity and step.quantity > 1 then
+                        local quantityText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                        quantityText:SetPoint("TOPLEFT", altX, altY)
+                        quantityText:SetText(step.quantity .. "x")
+                        quantityText:SetTextColor(1, 1, 1)
+                        altX = altX + quantityText:GetStringWidth() + 8
+                    end
 
-                    for _, mat in ipairs(step.materials) do
-                        local amountText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                        amountText:SetPoint("TOPLEFT", xOffset, contentY)
-                        amountText:SetText(mat.amount .. "x")
-                        amountText:SetTextColor(0.9, 0.9, 0.9)
-                        xOffset = xOffset + amountText:GetStringWidth() + 4
+                    -- ---- Pills ----
+                    local pillW, pillH, pillGap = 180, 26, 6
+                    for _, alt in ipairs(step.alternatives) do
+                        local pill = CreateFrame("Button", nil, row, "BackdropTemplate")
+                        pill:SetSize(pillW, pillH)
+                        pill:SetPoint("TOPLEFT", altX, altY - 2)
+                        pill:SetBackdrop({
+                            bgFile   = "Interface\\Buttons\\WHITE8x8",
+                            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+                            edgeSize = 10,
+                            insets   = { left = 1, right = 1, top = 1, bottom = 1 }
+                        })
 
-                        local icon = row:CreateTexture(nil, "ARTWORK")
-                        icon:SetSize(16, 16)
-                        icon:SetPoint("TOPLEFT", xOffset, contentY + 1)
-                        icon:SetTexture(addon:GetItemIcon(mat.itemID))
-                        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-                        xOffset = xOffset + 18
+                        local isActive = (alt.key == selectedKey)
+                        if isActive then
+                            pill:SetBackdropColor(0.35, 0.28, 0.10, 1)
+                            pill:SetBackdropBorderColor(0.9, 0.75, 0.25, 1)
+                        else
+                            pill:SetBackdropColor(0.10, 0.11, 0.14, 1)
+                            pill:SetBackdropBorderColor(0.35, 0.32, 0.22, 0.8)
+                        end
 
-                        local matText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                        matText:SetPoint("TOPLEFT", xOffset, contentY)
-                        matText:SetText(mat.name)
-                        matText:SetTextColor(0.75, 0.75, 0.75)
-                        xOffset = xOffset + matText:GetStringWidth() + 14
+                        local pillIcon = pill:CreateTexture(nil, "ARTWORK")
+                        pillIcon:SetSize(16, 16)
+                        pillIcon:SetPoint("LEFT", 8, 0)
+                        pillIcon:SetTexture(addon:GetItemIcon(alt.itemID))
+                        pillIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+
+                        local pillLbl = pill:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                        pillLbl:SetPoint("LEFT", pillIcon, "RIGHT", 6, 0)
+                        pillLbl:SetPoint("RIGHT", -8, 0)
+                        pillLbl:SetJustifyH("LEFT")
+                        pillLbl:SetText(alt.label or alt.key)
+                        if isActive then
+                            pillLbl:SetTextColor(1, 0.9, 0.5)
+                        else
+                            pillLbl:SetTextColor(0.75, 0.75, 0.75)
+                        end
+
+                        pill:SetScript("OnClick", function()
+                            if self.levelingScrollFrame then
+                                self.levelingSubTabOffsets.steps =
+                                    self.levelingScrollFrame:GetVerticalScroll() or 0
+                            end
+                            self.selectedAlternatives[altKey] = alt.key
+                            self:BuildLeveling()
+                        end)
+
+                        altX = altX + pillW + pillGap
+                    end
+
+                    -- ---- Selected alternative's materials ----
+                    if selectedAlt and selectedAlt.materials and #selectedAlt.materials > 0 then
+                        hasContent = true
+                        local matX = 12
+                        -- Position below the actual bottom edge of the pill
+                        -- buttons (altY - 2 - pillH), not a hardcoded offset,
+                        -- so the label doesn't render on top of the pills.
+                        local matY = altY - 2 - pillH - 8
+
+                        local matsLabel = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+                        matsLabel:SetPoint("TOPLEFT", matX, matY)
+                        matsLabel:SetText("|cff888888Mats:|r")
+                        matX = matX + matsLabel:GetStringWidth() + 8
+
+                        for _, mat in ipairs(selectedAlt.materials) do
+                            local amountText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                            amountText:SetPoint("TOPLEFT", matX, matY)
+                            amountText:SetText(mat.amount .. "x")
+                            amountText:SetTextColor(0.9, 0.9, 0.9)
+                            matX = matX + amountText:GetStringWidth() + 4
+
+                            local matIcon = row:CreateTexture(nil, "ARTWORK")
+                            matIcon:SetSize(16, 16)
+                            matIcon:SetPoint("TOPLEFT", matX, matY + 1)
+                            matIcon:SetTexture(addon:GetItemIcon(mat.itemID))
+                            matIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                            matX = matX + 18
+
+                            local matText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                            matText:SetPoint("TOPLEFT", matX, matY)
+                            matText:SetText(mat.name)
+                            matText:SetTextColor(0.75, 0.75, 0.75)
+                            matX = matX + matText:GetStringWidth() + 14
+                        end
+
+                        contentY = matY
+                    end
+
+                else
+                    -- ============================================================
+                    -- NORMAL STEP — recipe name + icon + materials
+                    -- ============================================================
+                    local recipeY = -28
+                    local recipeX = 12
+
+                    if step.quantity and step.quantity > 1 then
+                        local quantityText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                        quantityText:SetPoint("TOPLEFT", recipeX, recipeY)
+                        quantityText:SetText(step.quantity .. "x")
+                        quantityText:SetTextColor(1, 1, 1)
+                        recipeX = recipeX + quantityText:GetStringWidth() + 5
+                    end
+
+                    local function AddRecipeEntry(name, itemID)
+                        if itemID then
+                            local icon = row:CreateTexture(nil, "ARTWORK")
+                            icon:SetSize(16, 16)
+                            icon:SetPoint("TOPLEFT", recipeX, recipeY + 1)
+                            icon:SetTexture(addon:GetItemIcon(itemID))
+                            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                            recipeX = recipeX + 20
+                        end
+                        local txt = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                        txt:SetPoint("TOPLEFT", recipeX, recipeY)
+                        txt:SetText(name or "")
+                        recipeX = recipeX + txt:GetStringWidth() + 16
+                    end
+
+                    if step.recipes and #step.recipes > 0 then
+                        for idx, r in ipairs(step.recipes) do
+                            if idx > 1 then
+                                local sep = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                                sep:SetPoint("TOPLEFT", recipeX - 12, recipeY)
+                                sep:SetText("|cff666666•|r")
+                            end
+                            AddRecipeEntry(r.name, r.itemID)
+                        end
+                    else
+                        AddRecipeEntry(step.recipe, step.itemID)
+                        if not step.itemID and step.itemIDs then
+                            for _, id in ipairs(step.itemIDs) do
+                                local icon = row:CreateTexture(nil, "ARTWORK")
+                                icon:SetSize(16, 16)
+                                icon:SetPoint("TOPLEFT", recipeX, recipeY + 1)
+                                icon:SetTexture(addon:GetItemIcon(id))
+                                icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                                recipeX = recipeX + 18
+                            end
+                        end
+                    end
+
+                    if step.crafts and #step.crafts > 0 then
+                        hasContent = true
+                        local startX = 12
+                        local wrapX = startX
+                        local wrapY = contentY
+                        local maxWidth = rowWidth - 20
+
+                        for _, craft in ipairs(step.crafts) do
+                            local amountText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                            amountText:SetText((craft.quantity or 1) .. "x")
+                            amountText:SetTextColor(0.9, 0.9, 0.9)
+
+                            local nameText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                            nameText:SetText(craft.name)
+                            nameText:SetTextColor(0.75, 0.75, 0.75)
+
+                            local neededWidth = amountText:GetStringWidth() + 22 + nameText:GetStringWidth() + 12
+
+                            if wrapX + neededWidth > maxWidth then
+                                wrapX = startX
+                                wrapY = wrapY - 20
+                            end
+
+                            amountText:SetPoint("TOPLEFT", wrapX, wrapY)
+                            wrapX = wrapX + amountText:GetStringWidth() + 4
+
+                            local icon = row:CreateTexture(nil, "ARTWORK")
+                            icon:SetSize(16, 16)
+                            icon:SetPoint("TOPLEFT", wrapX, wrapY + 1)
+                            icon:SetTexture(addon:GetItemIcon(craft.itemID))
+                            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                            wrapX = wrapX + 18
+
+                            nameText:SetPoint("TOPLEFT", wrapX, wrapY)
+                            wrapX = wrapX + nameText:GetStringWidth() + 12
+                        end
+
+                        contentY = wrapY
+                    elseif step.materials and #step.materials > 0 then
+                        hasContent = true
+                        local xOffset = 12
+
+                        local matsLabel = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+                        matsLabel:SetPoint("TOPLEFT", xOffset, contentY)
+                        matsLabel:SetText("|cff888888Mats:|r")
+                        xOffset = xOffset + matsLabel:GetStringWidth() + 8
+
+                        for _, mat in ipairs(step.materials) do
+                            local amountText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                            amountText:SetPoint("TOPLEFT", xOffset, contentY)
+                            amountText:SetText(mat.amount .. "x")
+                            amountText:SetTextColor(0.9, 0.9, 0.9)
+                            xOffset = xOffset + amountText:GetStringWidth() + 4
+
+                            local icon = row:CreateTexture(nil, "ARTWORK")
+                            icon:SetSize(16, 16)
+                            icon:SetPoint("TOPLEFT", xOffset, contentY + 1)
+                            icon:SetTexture(addon:GetItemIcon(mat.itemID))
+                            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                            xOffset = xOffset + 18
+
+                            local matText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                            matText:SetPoint("TOPLEFT", xOffset, contentY)
+                            matText:SetText(mat.name)
+                            matText:SetTextColor(0.75, 0.75, 0.75)
+                            xOffset = xOffset + matText:GetStringWidth() + 14
+                        end
                     end
                 end
 
@@ -1361,11 +1563,11 @@ function addon:BuildLeveling()
                 -- ============================================================
                 if step.specAction == "open_tree" then
                     -- Divider line above the footer
-                    local divider = row:CreateTexture(nil, "ARTWORK")
-                    divider:SetHeight(1)
-                    divider:SetColorTexture(0.4, 0.35, 0.2, 0.6)
-                    divider:SetPoint("BOTTOMLEFT", 12, 36)
-                    divider:SetPoint("BOTTOMRIGHT", -12, 36)
+                    local footerDivider = row:CreateTexture(nil, "ARTWORK")
+                    footerDivider:SetHeight(1)
+                    footerDivider:SetColorTexture(0.4, 0.35, 0.2, 0.6)
+                    footerDivider:SetPoint("BOTTOMLEFT", 12, 36)
+                    footerDivider:SetPoint("BOTTOMRIGHT", -12, 36)
 
                     -- Left: short call to action
                     local specLbl = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -1377,31 +1579,35 @@ function addon:BuildLeveling()
                     openBtn:SetSize(140, 22)
                     openBtn:SetPoint("BOTTOMRIGHT", -12, 10)
                     openBtn:SetText("Open Spec Tree")
-                    openBtn:SetScript("OnClick", function()
-                        local targetProfession = self.selectedLevelingProf or "Tailoring"
-                        local targetSubTree = step.specTarget   -- e.g. "Nimble Needlework"
 
-                        -- 1. Resolve skillLineID for the current guide profession
-                        local skillLineID
-                        local prof1, prof2 = GetProfessions()
-                        for _, idx in ipairs({ prof1, prof2 }) do
-                            if idx then
-                                local name, _, _, _, _, _, skillLine = GetProfessionInfo(idx)
-                                if name == targetProfession then
-                                    skillLineID = skillLine
-                                    break
-                                end
-                            end
-                        end
+                    -- GetProfessions() only reflects the CURRENT character,
+                    -- so someone browsing a guide for a profession they
+                    -- haven't leveled yet would otherwise click this and
+                    -- get nothing (see the "not learned" bug report). Grey
+                    -- it out and say why instead of failing silently.
+                    local targetProfession   = self.selectedLevelingProf or "Tailoring"
+                    local learnedSkillLineID = self:GetLearnedSkillLineID(targetProfession)
 
-                        if not skillLineID then
-                            private:Print("Could not find skill line for " .. targetProfession ..
-                                        ". Press |cffffff00K|r and pick the Specializations tab.")
-                            return
-                        end
+                    if not learnedSkillLineID then
+                        openBtn:Disable()
+                        openBtn:SetScript("OnEnter", function(btn)
+                            GameTooltip:SetOwner(btn, "ANCHOR_TOP")
+                            GameTooltip:AddLine("Not learned on this character", 1, 0.4, 0.4)
+                            GameTooltip:AddLine(
+                                "Log in on a character with " .. targetProfession ..
+                                " trained, or use |cffffff00Pin Trainer|r above to find where to learn it.",
+                                0.9, 0.9, 0.9, true)
+                            GameTooltip:Show()
+                        end)
+                        openBtn:SetScript("OnLeave", function()
+                            GameTooltip:Hide()
+                        end)
+                    else
+                        openBtn:SetScript("OnClick", function()
+                            local targetSubTree = step.specTarget   -- e.g. "Nimble Needlework"
 
-                        -- 2. Open the profession (this loads the spec config)
-                        C_TradeSkillUI.OpenTradeSkill(skillLineID)
+                            -- 1. Open the profession (this loads the spec config)
+                            C_TradeSkillUI.OpenTradeSkill(learnedSkillLineID)
 
                         self.mainFrame:Hide()
 
@@ -1418,8 +1624,8 @@ function addon:BuildLeveling()
 
                         -- Strategy A: walk the button hierarchy and click the tab whose text matches
                         local function trySelectByText()
-                            local page = _G.ProfessionsFrame and _G.ProfessionsFrame.SpecPage
-                            if not page then return false end
+                            local specPage = _G.ProfessionsFrame and _G.ProfessionsFrame.SpecPage
+                            if not specPage then return false end
 
                             local found = false
                             local function walk(frame, depth)
@@ -1447,7 +1653,7 @@ function addon:BuildLeveling()
                                     if found then return end
                                 end
                             end
-                            walk(page, 0)
+                            walk(specPage, 0)
                             return found
                         end
 
@@ -1490,17 +1696,17 @@ function addon:BuildLeveling()
                             end
                             if not targetID then return false end
 
-                            local page = _G.ProfessionsFrame and _G.ProfessionsFrame.SpecPage
-                            if not page then return false end
+                            local specPage = _G.ProfessionsFrame and _G.ProfessionsFrame.SpecPage
+                            if not specPage then return false end
 
                             -- Cache the choice so future opens remember it
-                            local profID = page.GetProfessionID and page:GetProfessionID()
+                            local profID = specPage.GetProfessionID and specPage:GetProfessionID()
                             if profID and g_professionsSpecsSelectedTabs then
                                 g_professionsSpecsSelectedTabs[profID] = targetID
                             end
 
-                            if type(page.SetSelectedTab) == "function" then
-                                pcall(page.SetSelectedTab, page, targetID)
+                            if type(specPage.SetSelectedTab) == "function" then
+                                pcall(specPage.SetSelectedTab, specPage, targetID)
                                 return true
                             end
                             return false
@@ -1508,16 +1714,16 @@ function addon:BuildLeveling()
 
                         -- Strategy C: use the SpecPage's own TabSystem, iterating by index
                         local function trySelectByTabSystem()
-                            local page = _G.ProfessionsFrame and _G.ProfessionsFrame.SpecPage
-                            if not page or not page.TabSystem then return false end
-                            local ts = page.TabSystem
-                            for i = 1, 10 do
-                                local btn = ts.GetTabButton and ts:GetTabButton(i)
+                            local specPage = _G.ProfessionsFrame and _G.ProfessionsFrame.SpecPage
+                            if not specPage or not specPage.TabSystem then return false end
+                            local ts = specPage.TabSystem
+                            for tabIdx = 1, 10 do
+                                local btn = ts.GetTabButton and ts:GetTabButton(tabIdx)
                                 if not btn then break end
                                 local txt = btn.GetText and btn:GetText()
                                         or (btn.Text and btn.Text.GetText and btn.Text:GetText())
                                 if txt == targetSubTree and type(ts.SetTab) == "function" then
-                                    pcall(ts.SetTab, ts, i)
+                                    pcall(ts.SetTab, ts, tabIdx)
                                     return true
                                 end
                             end
@@ -1556,6 +1762,7 @@ function addon:BuildLeveling()
 
                         C_Timer.After(0.2, function() navigate(12) end)
                     end)
+                    end
 
                     -- Optional hint icon next to the button
                     if step.hint and step.hint ~= "" then
@@ -1568,8 +1775,8 @@ function addon:BuildLeveling()
                         iconTex:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
                         iconTex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 
-                        hintIcon:SetScript("OnEnter", function(self)
-                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                        hintIcon:SetScript("OnEnter", function(icon)
+                            GameTooltip:SetOwner(icon, "ANCHOR_RIGHT")
                             GameTooltip:AddLine("What is this?")
                             GameTooltip:AddLine(step.hint, 1, 1, 1, true)
                             GameTooltip:Show()
@@ -1604,11 +1811,11 @@ function addon:BuildLeveling()
     end
 
     scrollFrame:EnableMouseWheel(true)
-    scrollFrame:SetScript("OnMouseWheel", function(self, delta)
-        local current = self:GetVerticalScroll()
-        local maxScroll = self:GetVerticalScrollRange()
+    scrollFrame:SetScript("OnMouseWheel", function(sf, delta)
+        local current = sf:GetVerticalScroll()
+        local maxScroll = sf:GetVerticalScrollRange()
         local newScroll = math.min(maxScroll, math.max(0, current - (delta * 30)))
-        self:SetVerticalScroll(newScroll)
+        sf:SetVerticalScroll(newScroll)
     end)
 end
 
@@ -1665,7 +1872,7 @@ function addon:BuildKnowledge()
     local profs = {"Alchemy", "Blacksmithing", "Enchanting", "Herbalism", "Tailoring"}
     local xOffset = 90
 
-    for i, name in ipairs(profs) do
+    for _, name in ipairs(profs) do
         local btn = CreateFrame("Button", nil, filterBar, "UIPanelButtonTemplate")
         btn:SetSize(95, 26)
         btn:SetPoint("LEFT", xOffset, 0)
@@ -2011,20 +2218,36 @@ function addon:CollectAllMaterials(profData)
             end
 
             if include then
-                local hasStepMats = entry.materials and #entry.materials > 0
-                if hasStepMats then
-                    -- Step-level materials take priority (used for ranges
-                    -- where the guide gives you one total per material)
-                    for _, mat in ipairs(entry.materials) do
+                if entry.alternatives and #entry.alternatives > 0 then
+                    -- Only count the SELECTED alternative
+                    local altKey = (profData.name or "?") .. "|" ..
+                                   (entry.path or "shared") .. "|" .. (entry.range or "?")
+                    local selectedKey = self.selectedAlternatives
+                                        and self.selectedAlternatives[altKey]
+                                        or entry.alternatives[1].key
+
+                    local selectedAlt
+                    for _, alt in ipairs(entry.alternatives) do
+                        if alt.key == selectedKey then selectedAlt = alt; break end
+                    end
+                    if not selectedAlt then selectedAlt = entry.alternatives[1] end
+
+                    for _, mat in ipairs(selectedAlt.materials or {}) do
                         addItem(mat.itemID, mat.name, mat.amount or 1)
                     end
+
                 else
-                    -- Fall back to summing craft materials (used for
-                    -- First-Crafts steps and other multi-craft lists)
-                    for _, craft in ipairs(entry.crafts or {}) do
-                        local q = craft.quantity or 1
-                        for _, mat in ipairs(craft.materials or {}) do
-                            addItem(mat.itemID, mat.name, (mat.amount or 1) * q)
+                    local hasStepMats = entry.materials and #entry.materials > 0
+                    if hasStepMats then
+                        for _, mat in ipairs(entry.materials) do
+                            addItem(mat.itemID, mat.name, mat.amount or 1)
+                        end
+                    else
+                        for _, craft in ipairs(entry.crafts or {}) do
+                            local q = craft.quantity or 1
+                            for _, mat in ipairs(craft.materials or {}) do
+                                addItem(mat.itemID, mat.name, (mat.amount or 1) * q)
+                            end
                         end
                     end
                 end
@@ -2147,7 +2370,7 @@ function addon:RenderShoppingListBody(page, profData, topY)
             local needed = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             needed:SetPoint("RIGHT", -12, 0)
             if isComplete then
-                needed:SetText("|cff00ff00✓ Complete|r")
+                needed:SetText("|TInterface\\RaidFrame\\ReadyCheck-Ready:14:14:0:0|t |cff00ff00Have enough|r")
             else
                 needed:SetText("|cffffd700×" .. mat.remaining .. "|r")
             end
@@ -2172,7 +2395,7 @@ function addon:RenderShoppingListBody(page, profData, topY)
         local summary = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         summary:SetPoint("TOPLEFT", 8, y - 8)
         summary:SetText(string.format(
-            "|cff888888%d missing · %d complete|r", missing, complete))
+            "|cff888888%d missing · %d ready|r", missing, complete))
 
         content:SetHeight(math.abs(y) + 40)
     end
