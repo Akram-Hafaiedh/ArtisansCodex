@@ -7,145 +7,135 @@ CHANGELOG.md when they ship.
 
 ## 🚧 In Progress
 
-- [ ] **Verify Leveling tab end-to-end with real client**
-  - Fork/path switching (Slow vs Rush) preserves scroll position
-  - "Open Spec Tree" button navigates to correct sub-tree
-  - "Pin Trainer" sets a native waypoint on the map
-  - Materials + crafted-item icons render for every step
-  - Difficulty badges (orange/yellow/green) match live skill
-
-- [ ] **Alchemy.lua** — populate `Data/Midnight/Alchemy.lua` with real
-  leveling data (same schema as Tailoring)
+- [ ] **4.1 — Shopping list inside the Leveling tab**
+  - [ ] Sub-tab bar between header and scroll: `[Steps] [Shopping List]`
+  - [ ] Aggregate materials from current step onward (respects `selectedPath`)
+  - [ ] Subtract owned items via `C_Item.GetItemCount(itemID, true, false, true, true)`
+  - [ ] Row layout: icon · name · `×remaining` (· `×total` if partially owned)
+  - [ ] Checkmark + dimmed text for fully-owned materials
+  - [ ] Empty state: "You already own everything required."
+  - [ ] Preserve scroll offset per sub-tab (so toggling doesn't jump)
 
 ---
 
 ## ⏭️ Next
 
-- [ ] **Dashboard tab — real content**
-  - Replace hardcoded profession list with live skill scan
-    (`C_TradeSkillUI.GetAllProfessionTradeSkillLines`)
-  - Recommendation card driven by `addon.db.goal`
-  - Quick stats: total KP, missing treasures, weekly KP progress
-  - Recommended actions computed from open KP + nearby treasures
+- [ ] **4.2 — Real data for all remaining professions**
+  - [ ] Alchemy (currently stubbed — replace)
+  - [ ] Blacksmithing
+  - [ ] Enchanting
+  - [ ] Engineering
+  - [ ] Inscription
+  - [ ] Jewelcrafting
+  - [ ] Leatherworking
+  - [ ] Herbalism
+  - [ ] Mining
+  - [ ] Skinning
+  - [ ] Cooking
+  - [ ] Fishing
+  - [ ] Add each to `Artisan'sCodex.toc` under `# Data`
+  - [ ] Verify every `itemID` against live client
 
-- [ ] **Knowledge tab — real content**
-  - Treasure checklist driven by `profData.treasures`
-  - Completion state persisted in `Artisan'sCodexDB.completedTreasures`
-  - "Pin All Missing" actually sets waypoints for every uncollected treasure
-  - Weekly sources panel reads `profData.weekly`
-  - Profession filter bar (currently 5 hardcoded names)
-
-- [ ] **Specializations tab — real content**
-  - Tree visualization placeholder → interactive tree map
-  - Recommended builds driven by `profData.specializations`
-  - Per-build point-allocation walkthrough with checkpoints
-  - "View Path" opens the actual in-game spec tree on the right node
-
-- [ ] **Minimap button — drag to reposition**
-  - Angle hardcoded at 220° — make it a saved var
-  - Left-click opens window, right-click opens settings
-  - Tooltip shows active profession + skill
+- [ ] **4.3 — Leveling tab polish**
+  - [ ] Handle professions without forks (linear guide only)
+  - [ ] Handle professions without a trainer block (Cooking, Fishing)
+  - [ ] Verify "Open Spec Tree" across all professions with specs
+  - [ ] Verify "Pin Trainer" across all professions with map coords
+  - [ ] Scroll-wheel performance on long guides (e.g., Blacksmithing)
 
 ---
 
 ## 📋 Backlog
 
+- [ ] **Dashboard tab — real content**
+  - [ ] Replace hardcoded profession list with live skill scan
+  - [ ] Recommendation card driven by `addon.db.goal`
+  - [ ] Quick stats: total KP, missing treasures, weekly KP progress
+  - [ ] Recommended actions computed from open KP + nearby treasures
+
+- [ ] **Knowledge tab — real content**
+  - [ ] Treasure checklist driven by `profData.treasures`
+  - [ ] Completion persisted in `ArtisansCodexDB.completedTreasures`
+  - [ ] "Pin All Missing" sets waypoints for every uncollected treasure
+  - [ ] Weekly sources panel reads `profData.weekly`
+  - [ ] Profession filter bar (currently 5 hardcoded names)
+
+- [ ] **Specializations tab — real content**
+  - [ ] Interactive tree visualization
+  - [ ] Recommended builds driven by `profData.specializations`
+  - [ ] Per-build point-allocation walkthrough with checkpoints
+  - [ ] "View Path" opens the in-game spec tree on the right node
+
+- [ ] **Minimap button — drag to reposition**
+  - [ ] Angle as saved var (currently hardcoded 220°)
+  - [ ] Right-click → settings
+  - [ ] Tooltip shows active profession + skill
+
 - [ ] **Settings / Options panel**
-  - Goal selector: personal / gold / orders / balanced
-  - Scale slider
-  - Hide minimap button toggle
-  - Debug mode toggle (already exists via `/ac debug`)
-
-- [ ] **Data: remaining 10 professions**
-  - Blacksmithing, Enchanting, Engineering, Inscription,
-    Jewelcrafting, Leatherworking, Herbalism, Mining, Skinning,
-    Cooking, Fishing
-  - Same schema: name, icon, overview, trainer, leveling (with forks),
-    treasures, weekly, specializations
-
-- [ ] **Item ID audit**
-  - Every `itemID` in `Tailoring.lua` verified against live client
-  - Any `0` or missing IDs filled from Wowhead
-  - Add a `/ac audit` command that flags missing IDs at runtime
-
-- [ ] **Shopping list**
-  - Aggregate remaining materials across current + future steps
-  - Subtract owned (bags, bank, reagent bank, warband bank)
-  - Show ×remaining / ×required per line
+  - [ ] Goal selector: personal / gold / orders / balanced
+  - [ ] Scale slider
+  - [ ] Hide minimap button toggle
+  - [ ] Debug mode toggle (exists via `/ac debug`)
 
 - [ ] **Localization**
-  - Move all user-facing strings to `Locales/enUS.lua`
-  - Scaffold deDE, frFR, esES as fallback files
-  - Slash command aliases per-locale
-
-- [ ] **Custom waypoint arrow (optional)**
-  - Currently using Blizzard's native SuperTrack — works great
-  - If we want route-style multi-waypoint navigation (e.g., treasure
-    sweep), we'd need a custom arrow like TomTom's
-  - Decision deferred until treasure-batch feature ships
-
-- [ ] **Search / filter in Leveling tab**
-  - Text input to jump to a step by recipe or material name
-  - "Skill X" input to jump to a range
+  - [ ] Move all user-facing strings to `Locales/enUS.lua`
+  - [ ] Scaffold deDE, frFR, esES
 
 - [ ] **Import / export**
-  - Share completed treasures between alts (per profession)
-  - Share custom paths via string
+  - [ ] Share completed treasures between alts
+  - [ ] Share custom paths via string
+
+- [ ] **Item ID audit command**
+  - [ ] `/ac audit` — flags missing or zero itemIDs at runtime
 
 ---
 
 ## ✅ Done
 
 ### Addon Skeleton
-- [x] `.toc` with correct load order (Init → Core → Locales → Data → Modules)
+- [x] `.toc` with correct load order
 - [x] `Init.lua` — private namespace + debug printer
-- [x] `Core.lua` — database, event handling, lifecycle
-- [x] Slash commands: `/ac`, `/codex`, `/artisanscodex` (open / debug / reset)
+- [x] `Core.lua` — database, events, lifecycle
+- [x] Slash commands: `/ac`, `/codex`, `/artisanscodex`
 - [x] Minimap button with tooltip
-- [x] Saved variables: `ArtisansCodexDB` with `CopyDefaults` merge
+- [x] Saved variables: `ArtisansCodexDB`
 
 ### Main Frame
 - [x] Movable, closable, clamped, 1000×680
 - [x] Gold-trimmed dark theme
 - [x] Four tabs: Dashboard / Leveling / Specializations / Knowledge
-- [x] Tab state (active tab highlighting)
-- [x] Per-tab content frames with visibility swapping
+- [x] Tab state and per-tab content frames
 
-### Leveling Tab (fully implemented)
-- [x] Left panel: profession selector (available guides only)
-- [x] Header: profession icon + name + overview text
-- [x] Trainer block: name, zone, note, "Pin Trainer" button
-      (calls `C_Map.SetUserWaypoint` + `C_SuperTrack`)
-- [x] Fork/path system — Slow (Daily CD) vs Rush, with tabs and
-      intro paragraphs
+### Leveling Tab
+- [x] Left panel: profession selector
+- [x] Header: icon + name + overview
+- [x] Trainer block with "Pin Trainer" button
+- [x] Fork/path system (Slow / Rush) with tabs + intros
 - [x] Scrollable step list with stable layout
-- [x] Step rows: skill range, quantity ×N, recipe name, item icons
-- [x] Materials row with per-material icons and counts
-- [x] Difficulty badges (orange / yellow / green)
-- [x] "Recommended" flag on highlighted steps
-- [x] Crafted-items sub-list for multi-craft steps (Courtly set, etc.)
-- [x] Spec-action footer with "Open Spec Tree" button
+- [x] Step rows: range, quantity, recipe, item icons
+- [x] Materials row with per-material icons
+- [x] Difficulty badges + recommended flag
+- [x] Crafted-items sub-list (multi-craft steps)
+- [x] Spec-action footer + "Open Spec Tree" button
 - [x] Scroll position preserved across path switches
 - [x] Custom mouse-wheel scroll speed
 
 ### Spec Tree Navigation
-- [x] Resolve `skillLineID` from profession name
-- [x] `C_TradeSkillUI.OpenTradeSkill(skillLineID)` to open the book
-- [x] Three strategies: by-id (`C_ProfSpecs`), by-tab-system, by-text
-- [x] Retry loop (up to 12 × 0.1s) while the frame builds itself
-- [x] Cache selected tab to `g_professionsSpecsSelectedTabs`
-- [x] Transient reminder overlay ("Spend 5 KP on X")
+- [x] Resolve skillLineID from profession name
+- [x] `C_TradeSkillUI.OpenTradeSkill(skillLineID)`
+- [x] Three strategies: by-id, by-tab-system, by-text
+- [x] Retry loop
+- [x] Cache selection
+- [x] Transient spec reminder overlay
 
 ### Data
-- [x] Tailoring.lua — real Midnight data from wow-professions.com
-      (leveling with fork, treasures, weekly, specializations)
-- [x] DataLoader module — profession registry + getters
-- [x] Items resolved via `C_Item.GetItemCount` / `GetItemIconByID`
+- [x] `Tailoring.lua` — real Midnight data
+- [x] `Alchemy.lua` — stub (data TBD)
+- [x] `DataLoader` module
 
-### Modules (scaffolded, awaiting content)
-- [x] `Modules/DataLoader.lua`
+### Modules (scaffolded)
+- [x] `Modules/Leveling.lua` (UI lives in Core for now)
 - [x] `Modules/Dashboard.lua`
-- [x] `Modules/Leveling.lua`
 - [x] `Modules/Specializations.lua`
 - [x] `Modules/Knowledge.lua`
 - [x] `Locales/enUS.lua`
@@ -154,8 +144,10 @@ CHANGELOG.md when they ship.
 
 ## 🗓️ Milestones
 
-- **v0.1.0-alpha** — Leveling tab complete for Tailoring *(current)*
-- **v0.2.0-alpha** — Dashboard + Knowledge real content
-- **v0.3.0-alpha** — Specializations tab, all crafting professions
-- **v0.5.0-beta**  — Settings panel, localization scaffold
-- **v1.0.0**       — All 13 professions, shipping quality
+- **v0.1.0-alpha** — Leveling tab + Tailoring guide *(current, first commit)*
+- **v0.2.0-alpha** — Shopping list in Leveling tab + all 12 professions
+- **v0.3.0-alpha** — Dashboard real content
+- **v0.4.0-alpha** — Knowledge tab real content
+- **v0.5.0-alpha** — Specializations tab real content
+- **v0.6.0-beta**  — Settings, localization scaffold
+- **v1.0.0**       — Shipping quality, all features
