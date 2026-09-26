@@ -1,4 +1,4 @@
--- ArtisansCodex Progress module
+-- ArtisansCodex — Artisan's Progress (account heatmap)
 -- Account-wide heatmap: rows = character + profession, columns = status fields
 
 local _, private = ...
@@ -10,19 +10,19 @@ local Progress = private.Progress
 local CLASS_COLORS = RAID_CLASS_COLORS or {}
 
 local COLS = {
-    { key = "character",     label = "Character",      width = 110 },
-    { key = "realm",         label = "Realm",          width = 90 },
-    { key = "profession",    label = "Profession",     width = 100 },
+    { key = "character",     label = "Character",      width = 100 },
+    { key = "realm",         label = "Realm",          width = 80 },
+    { key = "profession",    label = "Profession",     width = 90 },
     { key = "skill",         label = "Skill",          width = 70 },
-    { key = "concentration", label = "Concentration",  width = 90 },
+    { key = "concentration", label = "Conc",           width = 72 },
     { key = "knowledge",     label = "Knowledge",      width = 80 },
-    { key = "notebook",      label = "Weekly Quest",   width = 80 },
-    { key = "zoneDrops",     label = "Uniques",        width = 60 },
-    { key = "treatise",      label = "Treatise",       width = 60 },
-    { key = "treasures",     label = "Treasures",      width = 70 },
-    { key = "firstCrafts",   label = "First Craft",    width = 70 },
-    { key = "catchUp",       label = "Catch-up",       width = 70 },
-    { key = "gathering",     label = "Gathering",      width = 70 },
+    { key = "notebook",      label = "Weekly",         width = 58 },
+    { key = "zoneDrops",     label = "Drops",          width = 52 },
+    { key = "treatise",      label = "Treatise",       width = 58 },
+    { key = "treasures",     label = "Treasures",      width = 64 },
+    { key = "firstCrafts",   label = "First",          width = 52 },
+    { key = "catchUp",       label = "Catch-up",       width = 64 },
+    { key = "gathering",     label = "Gather",         width = 56 },
     { key = "moxie",         label = "Moxie",          width = 60 },
     { key = "darkmoon",      label = "Darkmoon",       width = 60 }, -- last; only if active
 }
@@ -198,6 +198,195 @@ local function CellValue(key, char, prof)
     return "-", 0.4, 0.4, 0.4, 0.07, 0.07, 0.09
 end
 
+
+--- Rich tooltip body for a heatmap cell
+local function CellTooltip(key, char, prof)
+    local lines = {}
+    local title = nil
+    local live = char and char.guid == addon:GetPlayerGUID()
+
+    local function add(text, r, g, b)
+        lines[#lines + 1] = { text = text, r = r or 0.85, g = g or 0.85, b = b or 0.85 }
+    end
+
+    if key == "character" then
+        title = (char.name or "?") .. (live and " (this character)" or "")
+        add("Realm: " .. (char.realm or "?"))
+        if char.level and char.level > 0 then add("Level " .. tostring(char.level)) end
+        if char.lastUpdate and char.lastUpdate > 0 then
+            add("Last scan: " .. date("%Y-%m-%d %H:%M", char.lastUpdate), 0.6, 0.6, 0.6)
+        end
+        return title, lines
+    end
+    if key == "realm" then
+        return char.realm or "Realm", { { text = "Character realm", r = 0.7, g = 0.7, b = 0.7 } }
+    end
+    if key == "profession" then
+        title = prof.name or "Profession"
+        if prof.skillLevel then
+            add(string.format("Skill %d / %d", prof.skillLevel or 0, prof.skillMaxLevel or 0))
+        end
+        return title, lines
+    end
+    if key == "skill" then
+        title = "Profession skill"
+        add(string.format("%d / %d", prof.skillLevel or 0, prof.skillMaxLevel or 0))
+        return title, lines
+    end
+    if key == "concentration" then
+        title = "Concentration"
+        local c = prof.concentration
+        if not c or not c.maxQuantity or c.maxQuantity == 0 then
+            add("Not available for this profession", 0.6, 0.6, 0.6)
+        else
+            add(string.format("%d / %d", c.quantity or 0, c.maxQuantity))
+            add("Recharges over time while logged in.", 0.6, 0.6, 0.6)
+        end
+        return title, lines
+    end
+    if key == "knowledge" then
+        title = "Specialization knowledge"
+        local k = prof.knowledge
+        if not k then
+            add("Open the profession once to scan the talent trees.", 0.6, 0.6, 0.6)
+        else
+            add(string.format("Spent: %d", k.spent or 0))
+            add(string.format("Unspent: %d", k.unspent or 0))
+            add(string.format("Max: %d", k.max or 0))
+            if (k.max or 0) == 0 then
+                add("Open profession specialization trees to load max KP.", 1, 0.75, 0.3)
+            end
+        end
+        return title, lines
+    end
+    if key == "notebook" then
+        title = "Weekly profession quest"
+        local w = prof.weekly and prof.weekly.notebook
+        if w and w.max and w.max > 0 then
+            add(string.format("%d / %d completed", w.progress or 0, w.max))
+        else
+            add(w and w.done and "Completed this week" or "Not completed this week")
+        end
+        add("Trainer or Artisan's Consortium weekly quest.", 0.6, 0.6, 0.6)
+        return title, lines
+    end
+    if key == "zoneDrops" then
+        title = "Weekly zone / treasure drops"
+        local w = prof.weekly and prof.weekly.zoneDrops
+        if w and w.max and w.max > 0 then
+            add(string.format("%d / %d this week", w.progress or 0, w.max))
+        else
+            add("No weekly drop tracker for this profession", 0.6, 0.6, 0.6)
+        end
+        add("Random KP items from treasures (weekly).", 0.6, 0.6, 0.6)
+        return title, lines
+    end
+    if key == "treatise" then
+        title = "Thalassian Treatise"
+        local w = prof.weekly and prof.weekly.treatise
+        add(w and w.done and "Used this week" or "Not used this week")
+        add("Crafted via Inscription or public order. +1 KP weekly.", 0.6, 0.6, 0.6)
+        return title, lines
+    end
+    if key == "darkmoon" then
+        title = "Darkmoon Faire profession quest"
+        local w = prof.weekly and prof.weekly.darkmoon
+        add(w and w.done and "Completed this Faire" or "Not completed")
+        add("Monthly when Darkmoon Faire is active.", 0.6, 0.6, 0.6)
+        return title, lines
+    end
+    if key == "treasures" then
+        title = "One-time knowledge treasures"
+        local t = prof.treasures
+        if not t or not t.total or t.total == 0 then
+            add("No treasure data for this profession", 0.6, 0.6, 0.6)
+        else
+            add(string.format("%d / %d collected", t.collected or 0, t.total))
+            add("Map treasures from the Knowledge guide.", 0.6, 0.6, 0.6)
+        end
+        return title, lines
+    end
+    if key == "firstCrafts" then
+        title = "First-craft knowledge"
+        local f = prof.firstCrafts
+        if not f or not f.total or f.total == 0 then
+            add("No first-craft catalog (or open the profession to scan).", 0.6, 0.6, 0.6)
+        else
+            add(string.format("Claimed: %d", f.done or 0))
+            add(string.format("Remaining: %d", f.available or 0))
+            add(string.format("Total in catalog: %d", f.total or 0))
+            add("Open the profession once so recipe first-craft flags can update.", 0.6, 0.6, 0.6)
+        end
+        return title, lines
+    end
+    if key == "catchUp" then
+        title = "Catch-up knowledge"
+        local c = prof.catchUp
+        if not c then
+            add("No catch-up tracker", 0.6, 0.6, 0.6)
+        elseif (c.maxQuantity or 0) > 0 then
+            add(string.format("%d / %d earned toward catch-up cap", c.quantity or 0, c.maxQuantity))
+            if (c.itemCount or 0) > 0 then
+                add(string.format("Catch-up items in bags: %d", c.itemCount))
+            end
+        elseif (c.itemCount or 0) > 0 then
+            add(string.format("Catch-up items in bags: %d", c.itemCount))
+        else
+            add("No catch-up progress yet", 0.6, 0.6, 0.6)
+        end
+        return title, lines
+    end
+    if key == "gathering" then
+        title = "Weekly gathering / disenchant drops"
+        local g = prof.gathering
+        if not g or not g.max or g.max == 0 then
+            add("Not a gathering-style source for this profession", 0.6, 0.6, 0.6)
+        else
+            add(string.format("%d / %d weekly drops flagged", g.progress or 0, g.max))
+        end
+        return title, lines
+    end
+    if key == "moxie" then
+        title = "Artisan's Moxie"
+        local m = prof.moxie
+        add(string.format("%d on hand", m and m.quantity or 0))
+        add("Spendable profession currency (discoveries / unlocks).", 0.6, 0.6, 0.6)
+        return title, lines
+    end
+    return nil, lines
+end
+
+local HEADER_TIPS = {
+    character = "Character name (* = currently logged in)",
+    realm = "Realm",
+    profession = "Learned profession",
+    skill = "Profession skill level",
+    concentration = "Concentration pool",
+    knowledge = "Specialization KP spent (unspent) / max",
+    notebook = "Weekly trainer / consortium quest",
+    zoneDrops = "Weekly treasure-drop KP items",
+    treatise = "Weekly treatise use",
+    treasures = "One-time map knowledge treasures",
+    firstCrafts = "First-craft KP from the Midnight recipe catalog",
+    catchUp = "Catch-up KP currency progress",
+    gathering = "Weekly gathering or disenchant drop flags",
+    moxie = "Artisan's Moxie currency",
+    darkmoon = "Darkmoon Faire profession quest",
+}
+
+local function ShowTip(owner, title, lines)
+    GameTooltip:SetOwner(owner, "ANCHOR_CURSOR")
+    if title then
+        GameTooltip:AddLine(title, 1, 0.85, 0.2)
+    end
+    if lines then
+        for _, line in ipairs(lines) do
+            GameTooltip:AddLine(line.text, line.r, line.g, line.b, true)
+        end
+    end
+    GameTooltip:Show()
+end
+
 local function VisibleCols()
     local out = {}
     local darkmoonOn = IsDarkmoonActive()
@@ -265,42 +454,92 @@ function Progress:Toggle()
         if self.colPanel then self.colPanel:Hide() end
     else
         addon:ScanCurrentCharacter()
-        self:Refresh()
         self.frame:Show()
+        -- Layout after Show so scroll:GetWidth() is the real viewport
+        self:Refresh()
     end
 end
 
-local function MakeIconButton(parent, texture, tooltipTitle, tooltipBody, onClick)
+local BTN_SIZE = 26
+local BTN_GAP = 4
+
+--- Uniform square toolbar button (same size for Characters / Columns / Close)
+local function MakeToolbarButton(parent, opts)
     local btn = CreateFrame("Button", nil, parent)
-    btn:SetSize(24, 24)
+    btn:SetSize(BTN_SIZE, BTN_SIZE)
+
     local bg = btn:CreateTexture(nil, "BACKGROUND")
     bg:SetAllPoints()
-    bg:SetColorTexture(0.12, 0.13, 0.18, 0.95)
+    bg:SetColorTexture(0.10, 0.11, 0.15, 0.95)
     btn.bg = bg
-    local icon = btn:CreateTexture(nil, "ARTWORK")
-    icon:SetSize(16, 16)
-    icon:SetPoint("CENTER")
-    icon:SetTexture(texture)
+
+    local border = btn:CreateTexture(nil, "BORDER")
+    border:SetPoint("TOPLEFT", 0, 0)
+    border:SetPoint("BOTTOMRIGHT", 0, 0)
+    border:SetColorTexture(0.45, 0.38, 0.18, 0.85)
+    btn.border = border
+
+    local inner = btn:CreateTexture(nil, "ARTWORK")
+    inner:SetPoint("TOPLEFT", 1, -1)
+    inner:SetPoint("BOTTOMRIGHT", -1, 1)
+    inner:SetColorTexture(0.10, 0.11, 0.15, 1)
+    btn.inner = inner
+
+    if opts.texture then
+        local icon = btn:CreateTexture(nil, "OVERLAY")
+        icon:SetSize(16, 16)
+        icon:SetPoint("CENTER")
+        icon:SetTexture(opts.texture)
+        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        btn.icon = icon
+    elseif opts.label then
+        local fs = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        fs:SetPoint("CENTER", 0, 1)
+        fs:SetText(opts.label)
+        fs:SetTextColor(0.95, 0.85, 0.45)
+        btn.label = fs
+    end
+
     btn:SetScript("OnEnter", function(self)
         self.bg:SetColorTexture(0.22, 0.20, 0.12, 1)
-        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-        GameTooltip:AddLine(tooltipTitle, 1, 0.85, 0.2)
-        if tooltipBody then GameTooltip:AddLine(tooltipBody, 0.8, 0.8, 0.8, true) end
-        GameTooltip:Show()
+        self.inner:SetColorTexture(0.18, 0.16, 0.10, 1)
+        self.border:SetColorTexture(0.85, 0.70, 0.25, 1)
+        if opts.tooltipTitle then
+            GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+            GameTooltip:AddLine(opts.tooltipTitle, 1, 0.85, 0.2)
+            if opts.tooltipBody then
+                GameTooltip:AddLine(opts.tooltipBody, 0.8, 0.8, 0.8, true)
+            end
+            GameTooltip:Show()
+        end
     end)
     btn:SetScript("OnLeave", function(self)
-        self.bg:SetColorTexture(0.12, 0.13, 0.18, 0.95)
+        self.bg:SetColorTexture(0.10, 0.11, 0.15, 0.95)
+        self.inner:SetColorTexture(0.10, 0.11, 0.15, 1)
+        self.border:SetColorTexture(0.45, 0.38, 0.18, 0.85)
         GameTooltip:Hide()
     end)
-    btn:SetScript("OnClick", onClick)
+    if opts.onClick then
+        btn:SetScript("OnClick", opts.onClick)
+    end
     return btn
+end
+
+-- Backwards-compatible wrapper used nowhere else after toolbar rewrite
+local function MakeIconButton(parent, texture, tooltipTitle, tooltipBody, onClick)
+    return MakeToolbarButton(parent, {
+        texture = texture,
+        tooltipTitle = tooltipTitle,
+        tooltipBody = tooltipBody,
+        onClick = onClick,
+    })
 end
 
 function Progress:CreateFrame()
     if self.frame then return self.frame end
 
     local f = CreateFrame("Frame", "ArtisansCodexProgressFrame", UIParent, "BackdropTemplate")
-    f:SetSize(1020, 500)
+    f:SetSize(1100, 500)
     f:SetPoint("CENTER")
     f:SetFrameStrata("DIALOG")
     f:SetMovable(true)
@@ -321,7 +560,7 @@ function Progress:CreateFrame()
 
     local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", 16, -14)
-    title:SetText("|cffFFD700Account Progress|r")
+    title:SetText("|cffFFD700Artisan's Progress|r")
     f.title = title
 
     local subtitle = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -329,27 +568,45 @@ function Progress:CreateFrame()
     subtitle:SetTextColor(0.65, 0.65, 0.65)
     f.subtitle = subtitle
 
-    local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", -4, -4)
-    close:SetScript("OnClick", function()
-        f:Hide()
-        if Progress.charPanel then Progress.charPanel:Hide() end
-        if Progress.colPanel then Progress.colPanel:Hide() end
-    end)
+    -- Top-right toolbar bar: equal-sized buttons, aligned with title row
+    local toolbar = CreateFrame("Frame", nil, f)
+    toolbar:SetSize(BTN_SIZE * 3 + BTN_GAP * 2, BTN_SIZE)
+    toolbar:SetPoint("TOPRIGHT", -10, -12)
+    f.toolbar = toolbar
 
-    local colBtn = MakeIconButton(
-        f, "Interface\\Buttons\\UI-GuildButton-PublicNote-Up",
-        "Columns", "Show or hide heatmap columns.",
-        function() Progress:ToggleColPanel() end
-    )
-    colBtn:SetPoint("TOPRIGHT", close, "TOPLEFT", -6, -6)
+    local close = MakeToolbarButton(toolbar, {
+        label = "×",
+        tooltipTitle = "Close",
+        tooltipBody = "Close Artisan's Progress.",
+        onClick = function()
+            f:Hide()
+            if Progress.charPanel then Progress.charPanel:Hide() end
+            if Progress.colPanel then Progress.colPanel:Hide() end
+        end,
+    })
+    close:SetPoint("RIGHT", toolbar, "RIGHT", 0, 0)
+    if close.label then
+        close.label:SetTextColor(0.95, 0.55, 0.45)
+    end
+    f.closeBtn = close
 
-    local charBtn = MakeIconButton(
-        f, "Interface\\Icons\\Achievement_GuildPerk_EverybodysFriend",
-        "Characters", "Choose which characters appear in the heatmap.",
-        function() Progress:ToggleCharPanel() end
-    )
-    charBtn:SetPoint("TOPRIGHT", colBtn, "TOPLEFT", -6, 0)
+    local colBtn = MakeToolbarButton(toolbar, {
+        texture = "Interface\\Buttons\\UI-GuildButton-PublicNote-Up",
+        tooltipTitle = "Columns",
+        tooltipBody = "Show or hide heatmap columns.",
+        onClick = function() Progress:ToggleColPanel() end,
+    })
+    colBtn:SetPoint("RIGHT", close, "LEFT", -BTN_GAP, 0)
+    f.colBtn = colBtn
+
+    local charBtn = MakeToolbarButton(toolbar, {
+        texture = "Interface\\Icons\\Achievement_GuildPerk_EverybodysFriend",
+        tooltipTitle = "Characters",
+        tooltipBody = "Choose which characters appear in the heatmap.",
+        onClick = function() Progress:ToggleCharPanel() end,
+    })
+    charBtn:SetPoint("RIGHT", colBtn, "LEFT", -BTN_GAP, 0)
+    f.charBtn = charBtn
 
     -- Header row (fixed under title)
     local header = CreateFrame("Frame", nil, f)
@@ -423,17 +680,61 @@ function Progress:Refresh()
         and "No characters cached yet."
         or (charCount .. " character" .. (charCount == 1 and "" or "s") .. " · " .. #rows .. " row" .. (#rows == 1 and "" or "s")))
 
-    -- Column widths
-    local totalW = 0
-    for _, col in ipairs(cols) do
-        totalW = totalW + col.width
+    -- Viewport width: scroll frame minus vertical scrollbar (~20px)
+    local scrollW = f.scroll:GetWidth() or 0
+    local frameW = f:GetWidth() or 1020
+    -- left pad 12 + right pad 28 (scrollbar gutter) already in anchors;
+    -- GetWidth on the scroll frame still includes the bar track, so subtract it.
+    local scrollbarW = 20
+    local availW = scrollW - scrollbarW
+    if availW < 200 then
+        availW = frameW - 12 - 28 - scrollbarW
+    end
+    if availW < 200 then
+        availW = 900
     end
 
-    -- Header cells
-    local hx = 0
+    -- Preferred widths from COLS; scale down so visible columns fit availW exactly
+    local preferred = 0
     for _, col in ipairs(cols) do
+        preferred = preferred + (col.width or 60)
+    end
+    preferred = math.max(preferred, 1)
+
+    local scale = availW / preferred
+    local widths = {}
+    local totalW = 0
+    for i, col in ipairs(cols) do
+        local w = math.floor((col.width or 60) * scale)
+        if w < 36 then w = 36 end
+        widths[i] = w
+        totalW = totalW + w
+    end
+
+    -- If mins pushed us over, shrink proportionally until we fit
+    if totalW > availW and totalW > 0 then
+        local shrink = availW / totalW
+        totalW = 0
+        for i = 1, #widths do
+            widths[i] = math.max(28, math.floor(widths[i] * shrink))
+            totalW = totalW + widths[i]
+        end
+    end
+
+    -- Absorb remaining pixels into the last column (never exceed availW)
+    if #widths > 0 then
+        local drift = availW - totalW
+        widths[#widths] = math.max(28, widths[#widths] + drift)
+        totalW = availW
+    end
+
+    -- Header cells (clipped to header width)
+    header:SetWidth(availW)
+    local hx = 0
+    for i, col in ipairs(cols) do
+        local w = widths[i]
         local cell = CreateFrame("Frame", nil, header, "BackdropTemplate")
-        cell:SetSize(col.width, 20)
+        cell:SetSize(w, 20)
         cell:SetPoint("TOPLEFT", hx, 0)
         cell:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8x8",
@@ -443,19 +744,31 @@ function Progress:Refresh()
         cell:SetBackdropColor(0.12, 0.11, 0.08, 0.95)
         cell:SetBackdropBorderColor(0.45, 0.38, 0.18, 0.8)
         local fs = cell:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        fs:SetPoint("CENTER")
+        fs:SetPoint("LEFT", 2, 0)
+        fs:SetPoint("RIGHT", -2, 0)
+        fs:SetJustifyH("CENTER")
+        fs:SetWordWrap(false)
         fs:SetText("|cffFFD700" .. col.label .. "|r")
-        hx = hx + col.width
+        cell:EnableMouse(true)
+        local colKey = col.key
+        cell:SetScript("OnEnter", function(self)
+            local tip = HEADER_TIPS[colKey]
+            if tip then
+                ShowTip(self, col.label, { { text = tip, r = 0.75, g = 0.75, b = 0.75 } })
+            end
+        end)
+        cell:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        hx = hx + w
     end
 
     if #rows == 0 then
         local hint = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         hint:SetPoint("TOPLEFT", 8, -8)
-        hint:SetWidth(640)
+        hint:SetWidth(math.max(availW - 16, 200))
         hint:SetJustifyH("LEFT")
         hint:SetTextColor(0.7, 0.7, 0.7)
         hint:SetText("Log each character with the addon enabled. Heatmap rows appear automatically.")
-        content:SetSize(math.max(totalW, 660), 60)
+        content:SetSize(totalW, 60)
         return
     end
 
@@ -466,10 +779,11 @@ function Progress:Refresh()
         local x = 0
         local rowBg = (i % 2 == 0) and 0.02 or 0
 
-        for _, col in ipairs(cols) do
+        for ci, col in ipairs(cols) do
+            local w = widths[ci]
             local text, r, g, b, br, bg, bb = CellValue(col.key, char, prof)
             local cell = CreateFrame("Frame", nil, content, "BackdropTemplate")
-            cell:SetSize(col.width, ROW_H)
+            cell:SetSize(w, ROW_H)
             cell:SetPoint("TOPLEFT", x, y)
             cell:SetBackdrop({
                 bgFile = "Interface\\Buttons\\WHITE8x8",
@@ -480,16 +794,29 @@ function Progress:Refresh()
             cell:SetBackdropBorderColor(0.2, 0.2, 0.22, 0.6)
 
             local fs = cell:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            fs:SetPoint("CENTER")
+            fs:SetPoint("LEFT", 2, 0)
+            fs:SetPoint("RIGHT", -2, 0)
+            fs:SetJustifyH("CENTER")
+            fs:SetWordWrap(false)
             fs:SetTextColor(r, g, b)
             fs:SetText(text)
 
-            x = x + col.width
+            cell:EnableMouse(true)
+            local tipKey, tipChar, tipProf = col.key, char, prof
+            cell:SetScript("OnEnter", function(self)
+                local title, lines = CellTooltip(tipKey, tipChar, tipProf)
+                if title or (lines and #lines > 0) then
+                    ShowTip(self, title, lines)
+                end
+            end)
+            cell:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+            x = x + w
         end
         y = y - ROW_H
     end
 
-    content:SetSize(math.max(totalW, 100), math.abs(y) + 8)
+    content:SetSize(totalW, math.abs(y) + 8)
 end
 
 -- ============================================================

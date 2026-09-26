@@ -12,6 +12,7 @@ Locales/enUS.lua
 
 # Data
 Data/Midnight/ProgressMeta.lua
+Data/Midnight/FirstCrafts.lua
 Data/Midnight/Alchemy.lua
 Data/Midnight/Tailoring.lua
 Data/Midnight/Engineering.lua

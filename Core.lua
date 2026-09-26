@@ -258,18 +258,18 @@ function addon:TaskWeeklyReset()
         and C_DateAndTime.GetSecondsUntilWeeklyReset() or 0
 
     if type(progress.weeklyReset) == "number" and progress.weeklyReset > 0 and progress.weeklyReset <= now then
-        -- Collect weekly quest IDs from profession data files when available
+        -- Collect weekly quest IDs from ProgressMeta (aligned with WeeklyKnowledge)
         local weeklyQuestIDs = {}
+        if private.ProgressMeta and private.ProgressMeta.GetAllWeeklyQuestIDs then
+            weeklyQuestIDs = private.ProgressMeta:GetAllWeeklyQuestIDs()
+        end
+        -- Also pick up any questIDs still embedded in guide data weekly tables
         if private.Data then
             for _, profData in pairs(private.Data) do
                 if type(profData) == "table" and type(profData.weekly) == "table" then
                     for _, src in ipairs(profData.weekly) do
-                        if src.unlockQuestID then
-                            weeklyQuestIDs[src.unlockQuestID] = true
-                        end
-                        if src.questID then
-                            weeklyQuestIDs[src.questID] = true
-                        end
+                        if src.unlockQuestID then weeklyQuestIDs[src.unlockQuestID] = true end
+                        if src.questID then weeklyQuestIDs[src.questID] = true end
                         if type(src.questIDs) == "table" then
                             for _, qid in ipairs(src.questIDs) do
                                 weeklyQuestIDs[qid] = true
@@ -436,25 +436,48 @@ function addon:ScanCurrencies()
                 end
             end
 
-            -- Knowledge points (unspent from specialization currency; spent/max when profession UI known)
+            -- Knowledge points: unspent from specialization currency; spent/max by walking trait trees
+            -- (same approach as WeeklyKnowledge — GetProfessionInfoBySkillLineID does not expose correct KP)
             snap.knowledge = snap.knowledge or { unspent = 0, spent = 0, max = 0 }
-            if meta.variantID and C_ProfSpecs and C_ProfSpecs.GetCurrencyInfoForSkillLine then
-                local ok, info = pcall(C_ProfSpecs.GetCurrencyInfoForSkillLine, meta.variantID)
-                if ok and info then
-                    snap.knowledge.unspent = info.numAvailable or info.quantity or 0
-                end
-            end
-            if meta.variantID and C_TradeSkillUI and C_TradeSkillUI.GetProfessionInfoBySkillLineID then
-                local ok, pinfo = pcall(C_TradeSkillUI.GetProfessionInfoBySkillLineID, meta.variantID)
-                if ok and pinfo then
-                    -- professionInfo may expose knowledge fields depending on client build
-                    if pinfo.knowledgeLevel then
-                        snap.knowledge.spent = pinfo.knowledgeLevel or snap.knowledge.spent
-                    end
-                    if pinfo.maxKnowledgeLevel then
-                        snap.knowledge.max = pinfo.maxKnowledgeLevel or snap.knowledge.max
+            if meta.variantID and C_ProfSpecs then
+                if C_ProfSpecs.GetCurrencyInfoForSkillLine then
+                    local ok, info = pcall(C_ProfSpecs.GetCurrencyInfoForSkillLine, meta.variantID)
+                    if ok and info then
+                        snap.knowledge.unspent = info.numAvailable or info.quantity or 0
                     end
                 end
+
+                local spent, maxK = 0, 0
+                if C_ProfSpecs.GetConfigIDForSkillLine and C_Traits then
+                    local okCfg, configID = pcall(C_ProfSpecs.GetConfigIDForSkillLine, meta.variantID)
+                    if okCfg and configID and configID > 0 then
+                        local okInfo, configInfo = pcall(C_Traits.GetConfigInfo, configID)
+                        if okInfo and configInfo and configInfo.treeIDs then
+                            for _, treeID in ipairs(configInfo.treeIDs) do
+                                local okNodes, treeNodes = pcall(C_Traits.GetTreeNodes, treeID)
+                                if okNodes and treeNodes then
+                                    for _, nodeID in ipairs(treeNodes) do
+                                        local okNode, nodeInfo = pcall(C_Traits.GetNodeInfo, configID, nodeID)
+                                        if okNode and nodeInfo then
+                                            local maxRanks = nodeInfo.maxRanks or 0
+                                            if maxRanks > 1 then
+                                                maxK = maxK + (maxRanks - 1)
+                                            end
+                                            -- Free rank 1 does not cost KP; only ranks beyond the first count
+                                            local ranksPurchased = nodeInfo.ranksPurchased or 0
+                                            local currentRank = nodeInfo.currentRank or 0
+                                            if ranksPurchased > 1 and currentRank > 1 then
+                                                spent = spent + (currentRank - 1)
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+                snap.knowledge.spent = spent
+                snap.knowledge.max = maxK
             end
         end
     end
@@ -517,50 +540,73 @@ function addon:ScanGathering()
     char.lastUpdate = GetServerTime()
 end
 
---- First-craft KP: uses C_TradeSkillUI.IsRecipeFirstCraft when profession data is available.
---- Scans open profession recipes; also checks any spellIDs already stored on the snapshot.
+--- First-craft KP from curated Midnight recipe list (WeeklyKnowledge catalog).
+--- Prefer quest flags when present; otherwise C_TradeSkillUI.IsRecipeFirstCraft(spellID).
+--- done = KP already earned, total = catalog size for that profession.
 function addon:ScanFirstCrafts()
     local char = self:GetCharacterSnapshot()
     if not char then return end
     char.firstCrafts = char.firstCrafts or {}
 
-    local function noteFirstCraft(spellID, stillAvailable)
-        if not spellID or spellID == 0 then return end
-        -- stillAvailable == true means first-craft bonus is still claimable
-        char.firstCrafts[spellID] = stillAvailable and true or false
+    local catalog = private.FirstCrafts and private.FirstCrafts.byProfession
+    if type(catalog) ~= "table" then
+        return
     end
 
-    if C_TradeSkillUI and C_TradeSkillUI.GetAllRecipeIDs and C_TradeSkillUI.IsRecipeFirstCraft then
-        local recipeIDs = C_TradeSkillUI.GetAllRecipeIDs()
-        if type(recipeIDs) == "table" then
-            for _, recipeID in ipairs(recipeIDs) do
-                local info = C_TradeSkillUI.GetRecipeInfo and C_TradeSkillUI.GetRecipeInfo(recipeID)
-                local spellID = info and (info.recipeID or info.spellID or recipeID)
-                local ok, stillFirst = pcall(C_TradeSkillUI.IsRecipeFirstCraft, spellID or recipeID)
-                if ok and stillFirst ~= nil then
-                    noteFirstCraft(spellID or recipeID, stillFirst)
+    local canCheckSpell = C_TradeSkillUI and C_TradeSkillUI.IsRecipeFirstCraft
+
+    for profName, list in pairs(catalog) do
+        local snap = char.professions[profName]
+        if snap and type(list) == "table" and #list > 0 then
+            local done, total, available = 0, 0, 0
+            for _, entry in ipairs(list) do
+                local points = entry.points or 1
+                total = total + points
+                local claimed = false
+
+                -- Quest flags are authoritative when the catalog provides them
+                if type(entry.quests) == "table" and #entry.quests > 0 then
+                    local allDone = true
+                    local anyDone = false
+                    for _, qid in ipairs(entry.quests) do
+                        if IsQuestComplete(qid) then
+                            anyDone = true
+                            char.completedQuests[qid] = true
+                        else
+                            allDone = false
+                        end
+                    end
+                    -- Most first-craft entries use a single quest; treat any completion as claimed
+                    claimed = anyDone
+                elseif entry.spellID and canCheckSpell then
+                    local ok, stillFirst = pcall(C_TradeSkillUI.IsRecipeFirstCraft, entry.spellID)
+                    if ok and stillFirst ~= nil then
+                        -- stillFirst == true → bonus still available (not yet claimed)
+                        char.firstCrafts[entry.spellID] = stillFirst and true or false
+                        claimed = not stillFirst
+                    elseif char.firstCrafts[entry.spellID] ~= nil then
+                        -- Cached from a previous open of the profession
+                        claimed = char.firstCrafts[entry.spellID] ~= true
+                    end
+                elseif entry.spellID and char.firstCrafts[entry.spellID] ~= nil then
+                    claimed = char.firstCrafts[entry.spellID] ~= true
+                end
+
+                if claimed then
+                    done = done + points
+                else
+                    available = available + points
                 end
             end
-        end
-    end
 
-    -- Aggregate per learned profession (available first crafts remaining)
-    for profName, snap in pairs(char.professions) do
-        local available, total = 0, 0
-        -- Without a full Midnight first-craft catalog, total is "known scanned recipes"
-        -- and done = those no longer first-craft eligible.
-        for spellID, stillAvailable in pairs(char.firstCrafts) do
-            total = total + 1
-            if stillAvailable then
-                available = available + 1
-            end
+            snap.firstCrafts = {
+                done = done,
+                total = total,
+                available = available,
+            }
+        elseif snap then
+            snap.firstCrafts = { done = 0, total = 0, available = 0 }
         end
-        -- Per-profession split needs recipe→profession mapping; store character-wide for now
-        snap.firstCrafts = {
-            done = total - available,
-            total = total,
-            available = available,
-        }
     end
     char.lastUpdate = GetServerTime()
 end
@@ -588,62 +634,70 @@ function addon:ScanTreasures()
     char.lastUpdate = GetServerTime()
 end
 
---- Weekly sources: quest flags from guide data + catch-up currency for Patron progress.
+--- Weekly sources from ProgressMeta quest flags (same IDs as WeeklyKnowledge).
+--- notebook = trainer/consortium weekly quest
+--- zoneDrops = weekly treasure-drop KP items
+--- treatise / darkmoon = single quest flags
+--- patron progress remains currency-driven (ScanCurrencies catch-up tracker)
 function addon:ScanWeeklySources()
     local char = self:GetCharacterSnapshot()
-    if not char or not private.Data then return end
+    if not char then return end
 
-    for profName, snap in pairs(char.professions) do
-        local profData = private.Data[profName]
-        if type(profData) == "table" and type(profData.weekly) == "table" then
+    local metaTable = private.ProgressMeta
+    if not metaTable or not metaTable.professions then return end
+
+    local function countCompleted(questList)
+        local doneCount, total = 0, 0
+        if type(questList) ~= "table" then return 0, 0 end
+        for _, qid in ipairs(questList) do
+            total = total + 1
+            if IsQuestComplete(qid) then
+                doneCount = doneCount + 1
+                char.completedQuests[qid] = true
+            end
+        end
+        return doneCount, total
+    end
+
+    for profName, meta in pairs(metaTable.professions) do
+        local snap = char.professions[profName]
+        if snap then
             snap.weekly = snap.weekly or EmptyProfessionSnapshot(profName).weekly
 
-            for _, src in ipairs(profData.weekly) do
-                local name = (src.name or ""):lower()
-                local done = false
-                local progress, maxProg
+            -- Weekly Quest (notebook) — limit means "any N of these IDs"
+            local wq = meta.weeklyQuestIDs
+            if type(wq) == "table" and #wq > 0 then
+                local doneCount, total = countCompleted(wq)
+                local limit = meta.weeklyQuestLimit or total
+                local needed = math.min(limit, total)
+                local w = snap.weekly.notebook
+                w.done = doneCount >= needed and needed > 0
+                w.progress = math.min(doneCount, needed)
+                w.max = needed
+            end
 
-                if src.questID and IsQuestComplete(src.questID) then
-                    done = true
-                    char.completedQuests[src.questID] = true
-                end
-                if type(src.questIDs) == "table" then
-                    local c, t = 0, #src.questIDs
-                    for _, qid in ipairs(src.questIDs) do
-                        if IsQuestComplete(qid) then
-                            c = c + 1
-                            char.completedQuests[qid] = true
-                        end
-                    end
-                    progress, maxProg = c, t
-                    done = t > 0 and c >= t
-                end
-                if src.unlockQuestID and IsQuestComplete(src.unlockQuestID) then
-                    char.completedQuests[src.unlockQuestID] = true
-                end
+            -- Weekly zone treasure drops (WK "Treasure" category)
+            local zd = meta.zoneDropQuests
+            if type(zd) == "table" and #zd > 0 then
+                local doneCount, total = countCompleted(zd)
+                local w = snap.weekly.zoneDrops
+                w.progress = doneCount
+                w.max = total
+                w.done = total > 0 and doneCount >= total
+            end
 
-                local function apply(key)
-                    local w = snap.weekly[key]
-                    if not w then return end
-                    w.done = done
-                    if progress ~= nil then w.progress = progress end
-                    if maxProg ~= nil then w.max = maxProg end
-                end
+            -- Treatise (weekly, single quest flag)
+            if meta.treatiseQuestID and meta.treatiseQuestID > 0 then
+                local done = IsQuestComplete(meta.treatiseQuestID)
+                if done then char.completedQuests[meta.treatiseQuestID] = true end
+                snap.weekly.treatise.done = done
+            end
 
-                if name:find("patron") then
-                    -- Prefer currency-based progress from ScanCurrencies; only set done via quest if present
-                    if src.questID or src.questIDs then
-                        apply("patron")
-                    end
-                elseif name:find("notebook") or name:find("trainer") or name:find("weekly quest") then
-                    apply("notebook")
-                elseif name:find("zone") or name:find("drop") or name:find("gathering") then
-                    apply("zoneDrops")
-                elseif name:find("treatise") then
-                    apply("treatise")
-                elseif name:find("darkmoon") then
-                    apply("darkmoon")
-                end
+            -- Darkmoon Faire profession quest (monthly, single flag)
+            if meta.darkmoonQuestID and meta.darkmoonQuestID > 0 then
+                local done = IsQuestComplete(meta.darkmoonQuestID)
+                if done then char.completedQuests[meta.darkmoonQuestID] = true end
+                snap.weekly.darkmoon.done = done
             end
         end
     end
@@ -760,15 +814,34 @@ function addon:SlashCommand(input)
         self.db.debug = not self.db.debug
         private.debug = self.db.debug
         private:Print("Debug mode:", self.db.debug and "|cff00ff00ON|r" or "|cffff0000OFF|r")
-    elseif input == "reset" then
+    elseif input == "reset" or input == "reset all" then
         ArtisansCodexDB = nil
         ReloadUI()
+    elseif input == "reset progress" then
+        -- Wipe multi-character progress cache (first-craft flags, weekly snaps, etc.)
+        self:EnsureProgressDB()
+        self.db.progress.characters = {}
+        self.db.progress.tracked = {}
+        self.db.progress.weeklyReset = 0
+        private:Print("Progress cache cleared. Rescanning this character…")
+        self:ScanCurrentCharacter()
+        if private.Progress and private.Progress.frame and private.Progress.frame:IsShown() then
+            private.Progress:Refresh()
+        end
+        private:Print("Open each profession once so knowledge trees and first-crafts refresh.")
+    elseif input == "scan" then
+        self:ScanCurrentCharacter()
+        if private.Progress and private.Progress.frame and private.Progress.frame:IsShown() then
+            private.Progress:Refresh()
+        end
     else
         print("|cff00ccffArtisan's Codex|r commands:")
-        print("  |cffffff00/ac|r          - Open/Close main window")
-        print("  |cffffff00/ac progress|r - Account progress cards")
-        print("  |cffffff00/ac debug|r    - Toggle debug messages")
-        print("  |cffffff00/ac reset|r    - Reset all settings")
+        print("  |cffffff00/ac|r               - Open/Close main window")
+        print("  |cffffff00/ac progress|r      - Account progress heatmap")
+        print("  |cffffff00/ac scan|r          - Rescan this character's progress")
+        print("  |cffffff00/ac debug|r         - Toggle debug messages")
+        print("  |cffffff00/ac reset progress|r - Clear progress cache (keeps other settings)")
+        print("  |cffffff00/ac reset|r         - Reset ALL settings + reload")
     end
 end
 
