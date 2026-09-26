@@ -34,15 +34,12 @@ function DataLoader:Load()
     }
 
     local loaded = 0
-    if private.Data.Alchemy then
-        loaded = loaded + 1
-        private:Print("Alchemy data loaded")
+    for _, name in ipairs(private.Data.professions) do
+        if private.Data[name] then
+            loaded = loaded + 1
+            private:Print(name .. " data loaded")
+        end
     end
-    if private.Data.Tailoring then
-        loaded = loaded + 1
-        private:Print("Tailoring data loaded")
-    end
-
 
     private:Print("DataLoader ready - " .. loaded .. " guide(s) loaded, " ..
                   #private.Data.professions .. " professions registered")

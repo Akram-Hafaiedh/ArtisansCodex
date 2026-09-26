@@ -16,32 +16,28 @@ CHANGELOG.md when they ship.
   - [ ] Empty state: "You already own everything required."
   - [ ] Preserve scroll offset per sub-tab (so toggling doesn't jump)
 
+- [ ] **4.2b — Verify new profession data against a live client**
+  - [ ] Alchemy — rewritten this pass, re-verify item IDs in-game
+  - [ ] Enchanting / Jewelcrafting / Leatherworking — new, condensed from wow-professions.com, needs an in-game pass
+  - [ ] Mining / Herbalism / Skinning / Fishing / Cooking — new, gathering-profession schema, needs an in-game pass
+  - [ ] Fill in real trainer coordinates (currently approximate placeholders) for all professions added this pass
+  - [ ] Some itemIDs are placeholders (`itemID = 0`) where wow-professions.com didn't link a Wowhead ID (e.g. Alchemy's Stabilized Derivate refs, some Leatherworking/Enchanting mixed-mote rows) — look these up in-game or via Wowhead search
+
 ---
 
 ## ⏭️ Next
 
-- [ ] **4.2 — Real data for all remaining professions**
-  - [ ] Alchemy (currently stubbed — replace)
-  - [ ] Blacksmithing
-  - [ ] Enchanting
-  - [ ] Engineering
-  - [ ] Inscription
-  - [ ] Jewelcrafting
-  - [ ] Leatherworking
-  - [ ] Herbalism
-  - [ ] Mining
-  - [ ] Skinning
-  - [ ] Cooking
-  - [ ] Fishing
-  - [ ] Add each to `Artisan'sCodex.toc` under `# Data`
-  - [ ] Verify every `itemID` against live client
+- [ ] **4.3 — Leveling tab: gathering-profession support**
+  - [ ] Mining, Herbalism, Skinning, and Fishing use a different data shape (`isGathering = true`, skill-range `leveling` entries with no real recipe/materials, plus `zones`/`equipment`/`consumables`/`infusedTypes` tables) — the Leveling tab UI currently assumes a crafting profession and needs a gathering-mode layout
+  - [ ] Decide how Skinning (tied to killing mobs, not a grind route) should render differently from Mining/Herbalism (zone routes) and Fishing (skill-range zones, cap 300 not 100)
+  - [ ] Add each new profession to `Artisan'sCodex.toc` under `# Data` — done for this pass, re-check on future additions
 
-- [ ] **4.3 — Leveling tab polish**
-  - [ ] Handle professions without forks (linear guide only)
-  - [ ] Handle professions without a trainer block (Cooking, Fishing)
+- [ ] **4.4 — Leveling tab polish**
+  - [ ] Handle professions without forks (linear guide only) — Enchanting, Jewelcrafting, Leatherworking, Cooking now need this
+  - [ ] Handle professions without a trainer block (Cooking, Fishing) — trainer blocks now exist for both, revisit whether this is still needed
   - [ ] Verify "Open Spec Tree" across all professions with specs
   - [ ] Verify "Pin Trainer" across all professions with map coords
-  - [ ] Scroll-wheel performance on long guides (e.g., Blacksmithing)
+  - [ ] Scroll-wheel performance on long guides (e.g., Blacksmithing, Enchanting)
 
 ---
 
@@ -54,15 +50,15 @@ CHANGELOG.md when they ship.
   - [ ] Recommended actions computed from open KP + nearby treasures
 
 - [ ] **Knowledge tab — real content**
-  - [ ] Treasure checklist driven by `profData.treasures`
+  - [ ] Treasure checklist driven by `profData.treasures` (Alchemy, Skinning have data now; still missing for most crafting professions)
   - [ ] Completion persisted in `ArtisansCodexDB.completedTreasures`
   - [ ] "Pin All Missing" sets waypoints for every uncollected treasure
   - [ ] Weekly sources panel reads `profData.weekly`
-  - [ ] Profession filter bar (currently 5 hardcoded names)
+  - [ ] Profession filter bar (currently 5 hardcoded names, now 13 professions registered)
 
 - [ ] **Specializations tab — real content**
   - [ ] Interactive tree visualization
-  - [ ] Recommended builds driven by `profData.specializations`
+  - [ ] Recommended builds driven by `profData.specializations` (only Alchemy has this filled in; Engineering/Inscription have partial builds; rest are missing)
   - [ ] Per-build point-allocation walkthrough with checkpoints
   - [ ] "View Path" opens the in-game spec tree on the right node
 
@@ -86,7 +82,7 @@ CHANGELOG.md when they ship.
   - [ ] Share custom paths via string
 
 - [ ] **Item ID audit command**
-  - [ ] `/ac audit` — flags missing or zero itemIDs at runtime
+  - [ ] `/ac audit` — flags missing or zero itemIDs at runtime (there are a handful of known `itemID = 0` placeholders from this data pass, see 4.2b above)
 
 ---
 
@@ -129,9 +125,20 @@ CHANGELOG.md when they ship.
 - [x] Transient spec reminder overlay
 
 ### Data
+- [x] `Alchemy.lua` — rewritten with corrected item IDs and full leveling path (was stubbed/stale)
 - [x] `Tailoring.lua` — real Midnight data
-- [x] `Alchemy.lua` — stub (data TBD)
-- [x] `DataLoader` module
+- [x] `Blacksmithing.lua` — verified against wow-professions.com, no changes needed
+- [x] `Engineering.lua` — existing data
+- [x] `Inscription.lua` — existing data
+- [x] `Enchanting.lua` — new
+- [x] `Jewelcrafting.lua` — new
+- [x] `Leatherworking.lua` — new
+- [x] `Mining.lua` — new (gathering profession)
+- [x] `Herbalism.lua` — new (gathering profession)
+- [x] `Skinning.lua` — new (gathering profession)
+- [x] `Cooking.lua` — new
+- [x] `Fishing.lua` — new (gathering profession, 300 skill cap)
+- [x] `DataLoader` module — now loads all 13 professions generically instead of a hardcoded if-chain
 
 ### Modules (scaffolded)
 - [x] `Modules/Leveling.lua` (UI lives in Core for now)
@@ -144,8 +151,8 @@ CHANGELOG.md when they ship.
 
 ## 🗓️ Milestones
 
-- **v0.1.0-alpha** — Leveling tab + Tailoring guide *(current, first commit)*
-- **v0.2.0-alpha** — Shopping list in Leveling tab + all 12 professions
+- **v0.1.0-alpha** — Leveling tab + Tailoring guide *(shipped)*
+- **v0.2.0-alpha** — Shopping list in Leveling tab + all 13 professions have leveling data *(data now done, shopping list still pending)*
 - **v0.3.0-alpha** — Dashboard real content
 - **v0.4.0-alpha** — Knowledge tab real content
 - **v0.5.0-alpha** — Specializations tab real content
