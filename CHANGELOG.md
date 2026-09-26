@@ -1,26 +1,34 @@
 # Changelog
 
-All notable changes to Artisan's Codex will be documented here.
-Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+All notable changes to Artisan's Codex will be documented here.  
+Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
 ### Added
-- `Enchanting.lua`, `Jewelcrafting.lua`, `Leatherworking.lua` — new leveling data, sourced from wow-professions.com
-- `Mining.lua`, `Herbalism.lua`, `Skinning.lua`, `Fishing.lua` — new gathering-profession data (`isGathering = true`, skill-range steps instead of recipes, plus `zones`/`equipment`/`consumables`/`infusedTypes` tables)
-- `Cooking.lua` — new leveling data
-- All 8 new profession files registered in `ArtisansCodex.toc` under `# Data`
-- **Knowledge Treasures data** for all 11 professions
-- **Knowledge tab rewritten** — dynamic profession filter, live Collected/Missing via `C_QuestLog.IsQuestFlaggedCompleted`, working Pin / Pin All Missing map waypoints, weekly sources panel when data exists, sorted missing-first list with tooltips.
- that have them (Alchemy, Blacksmithing, Enchanting, Engineering, Herbalism, Inscription, Jewelcrafting, Leatherworking, Mining, Skinning, Tailoring). Scraped from wow-professions.com treasure hub. Each entry includes name, zone, mapID, x/y, questID, description, and kp=3. Ready for the Knowledge tab.
+- **Recipes tab** (placeholder UI) — fifth tab with profession sidebar and clear empty state; full recipe browser planned for a later release (Tailoring first).
+- **Knowledge — weekly itemIDs** for all primary professions (Glimmer of Midnight knowledge, trainer notebooks/notes, zone/gathering drops, Thalassian Treatises).
+- **Knowledge — one-time renown books** with correct itemIDs across professions.
+- **Knowledge — treasure itemIDs** so icons, quality colors, and tooltips work (not only Tailoring).
+- `README.md` — status table, what Knowledge covers now, what is deferred.
 
 ### Changed
-- `Alchemy.lua` — rewritten. The previous file had incorrect item IDs (Tranquility Bloom, Sanguithorn, Mana Lily, Azeroot, Argentleaf, and Oil of Heartwood were mismatched) and an incomplete First Crafts list. Now matches the current wow-professions.com leveling guide, with a Potions/Flasks fork for 50-100.
-- `DataLoader.lua` — `Load()` now iterates `private.Data.professions` generically instead of a hardcoded if-chain per profession, so newly added data files register automatically.
+- Knowledge item names: request item data + recolor on load (fixes white/wrong quality until switching profession).
+- Knowledge collected rows: muted **quality** color instead of flat grey.
+- Knowledge / one-time / weekly tooltips: tight hit frame over icon + name (tooltip sits next to the item).
+- Tab bar: five tabs; slightly narrower buttons to fit Recipes.
+- Knowledge marked **good enough for v0.1** — remaining work (live weekly progress, first-craft KP, Cooking/Fishing depth) tracked in TODO, not required before Recipes.
 
-### Verified
-- `Blacksmithing.lua` — checked against wow-professions.com's current leveling guide, already accurate, no changes made.
+### Notes (deferred — not bugs)
+- Recipes browser content is intentionally empty until the Recipes feature pass.
+- Live “done this week” for weekly sources, first-craft KP, and full Dashboard/Specs are planned later (see `TODO.md`).
+
+### Previously in Unreleased
+- Enchanting / Jewelcrafting / Leatherworking leveling data
+- Mining / Herbalism / Skinning / Fishing gathering data
+- Cooking leveling data
+- Knowledge treasures data + Knowledge tab rewrite (collected flags, pins, weekly panel)
 
 ## [0.1.0-alpha] — 2026-09-22
 
@@ -28,16 +36,9 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Addon skeleton (Init.lua, Core.lua, .toc)
 - Slash commands: `/ac`, `/codex`, `/artisanscodex`
 - Minimap button
-- Main frame with four tabs: Dashboard / Leveling / Specializations / Knowledge
-- **Leveling tab** — full implementation:
-  - Profession selector, trainer block with map-pin button
-  - Fork/path system (Slow vs Rush)
-  - Scrollable step list with item icons, materials, difficulty badges
-  - Crafted-items sub-list for multi-craft steps
-  - Spec-action footer with "Open Spec Tree" button
-  - Scroll position preservation across path switches
-- **Spec tree navigation** — three fallback strategies + retry loop
-- **Transient spec reminder** overlay after opening the tree
-- `Tailoring.lua` — real Midnight leveling data from wow-professions.com
+- Main frame with tabs: Dashboard / Leveling / Specializations / Knowledge
+- **Leveling tab** — profession selector, trainer pin, path forks, step list, materials, icons
+- Spec tree navigation helpers
+- `Tailoring.lua` — Midnight leveling data from wow-professions.com
 - Module scaffolds: Dashboard, Leveling, Specializations, Knowledge, DataLoader
 - Locale scaffold: `Locales/enUS.lua`

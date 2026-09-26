@@ -140,7 +140,7 @@ function addon:OnEnable()
 
     -- Sanity-check that tab modules attached their builders
     local missing = {}
-    for _, name in ipairs({ "BuildDashboard", "BuildLeveling", "BuildSpecializations", "BuildKnowledge" }) do
+    for _, name in ipairs({ "BuildDashboard", "BuildLeveling", "BuildSpecializations", "BuildKnowledge", "BuildRecipes" }) do
         if type(self[name]) ~= "function" then
             missing[#missing + 1] = name
         end
@@ -149,7 +149,7 @@ function addon:OnEnable()
         private:Print("|cffff4444ERROR:|r Tab modules missing:", table.concat(missing, ", "))
         private:Print("Expected files under |cffffff00Modules/|r — see ArtisansCodex.toc")
     else
-        private:Print("Tab modules OK (Dashboard, Leveling, Specs, Knowledge)")
+        private:Print("Tab modules OK (Dashboard, Leveling, Specs, Knowledge, Recipes)")
     end
 
     private:Print("Addon enabled. Type |cffffff00/ac|r to open.")
@@ -233,17 +233,18 @@ function addon:CreateMainFrame()
     -- TAB BUTTONS
     -- ============================================================
     local tabNames = {
-        { key = "dashboard",      text = "Dashboard" },
-        { key = "leveling",       text = "Leveling" },
+        { key = "dashboard",       text = "Dashboard" },
+        { key = "leveling",        text = "Leveling" },
         { key = "specializations", text = "Specializations" },
-        { key = "knowledge",      text = "Knowledge" },
+        { key = "knowledge",       text = "Knowledge" },
+        { key = "recipes",         text = "Recipes" },
     }
 
     frame.tabs = {}
     frame.tabContents = {}
 
-    local tabWidth = 140
-    local startX = 30
+    local tabWidth = 118
+    local startX = 20
 
     for i, tabInfo in ipairs(tabNames) do
         local tab = CreateFrame("Button", nil, frame, "BackdropTemplate")
@@ -311,6 +312,8 @@ function addon:CreateMainFrame()
         "|cffFFD700Specializations|r\n\nComing soon...\n\nInteractive talent trees + builds")
     AddPlaceholder(frame.tabContents["knowledge"],
         "|cffFFD700Knowledge & Treasures|r\n\nComing soon...\n\nTreasures + weekly knowledge tracking")
+    AddPlaceholder(frame.tabContents["recipes"],
+        "|cffFFD700Recipes|r\n\nComing soon...\n\nBrowse profession recipes")
 
     frame:Hide()
     self.mainFrame = frame
@@ -355,6 +358,7 @@ function addon:SelectTab(tabKey)
         leveling        = "BuildLeveling",
         specializations = "BuildSpecializations",
         knowledge       = "BuildKnowledge",
+        recipes         = "BuildRecipes",
     }
     local methodName = builders[tabKey]
     if methodName then
@@ -691,4 +695,5 @@ end
 --   Modules/Leveling.lua       → addon:BuildLeveling(), CollectAllMaterials, RenderShoppingListBody
 --   Modules/Specializations.lua → addon:BuildSpecializations()
 --   Modules/Knowledge.lua      → addon:BuildKnowledge()
+--   Modules/Recipes.lua        → addon:BuildRecipes()
 -- SelectTab() in this file still calls those methods; modules attach them on load.
