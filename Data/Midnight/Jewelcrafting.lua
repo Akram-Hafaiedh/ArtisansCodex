@@ -90,4 +90,20 @@ private.Data.Jewelcrafting = {
             isRecommended = true,
         },
     },
+
+    knowledgeOverview = "Jewelcrafting Knowledge comes from one-time treasures (usually 8×3 KP) and weekly sources such as Patron Orders, a trainer quest, zone drops, an Inscription treatise, and the monthly Darkmoon Faire. Check each row below for details.",
+
+    knowledgeCatchUp = "If you start late or miss weeks, Patron Orders can grant catch-up knowledge until you are back on pace.",
+
+    treasures = {
+        { id = "sindorei_masterwork_chisel", name = "Sin'dorei Masterwork Chisel", zone = "Silvermoon City", mapID = 2393, x = 50.6, y = 56.6, questID = 89122, description = "Silvermoon City.", kp = 3 },
+        { id = "vintage_soul_gem", name = "Vintage Soul Gem", zone = "Silvermoon City", mapID = 2393, x = 55.4, y = 48.0, questID = 89127, description = "Silvermoon City.", kp = 3 },
+        { id = "dual_function_magnifiers", name = "Dual-Function Magnifiers", zone = "Silvermoon City", mapID = 2393, x = 28.6, y = 46.5, questID = 89124, description = "Silvermoon City.", kp = 3 },
+        { id = "poorly_rounded_vial", name = "Poorly Rounded Vial", zone = "Eversong Woods", mapID = 2395, x = 56.6, y = 40.9, questID = 89125, description = "Eversong Woods.", kp = 3 },
+        { id = "sindorei_gem_faceters", name = "Sin'dorei Gem Faceters", zone = "Eversong Woods", mapID = 2395, x = 39.6, y = 38.9, questID = 89129, description = "Eversong Woods.", kp = 3 },
+        { id = "speculative_voidstorm_crystal", name = "Speculative Voidstorm Crystal", zone = "Voidstorm (Slayer's Rise)", mapID = 2444, x = 30.5, y = 69.1, questID = 89123, description = "Voidstorm, Slaver's Rise.", kp = 3 },
+        { id = "ethereal_gem_pliers", name = "Ethereal Gem Pliers", zone = "Voidstorm (Slayer's Rise)", mapID = 2444, x = 54.2, y = 51.2, questID = 89128, description = "Voidstorm, Slaver's Rise.", kp = 3 },
+        { id = "shattered_glass", name = "Shattered Glass", zone = "Voidstorm (Slayer's Rise)", mapID = 2444, x = 62.7, y = 53.4, questID = 89126, description = "Voidstorm, Slaver's Rise.", kp = 3 },
+    },
+
 }

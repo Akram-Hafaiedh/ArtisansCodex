@@ -160,4 +160,20 @@ private.Data.Enchanting = {
             isRecommended = true,
         },
     },
+
+    knowledgeOverview = "Enchanting Knowledge comes from one-time treasures (usually 8×3 KP) and weekly sources such as Patron Orders, a trainer quest, zone drops, an Inscription treatise, and the monthly Darkmoon Faire. Check each row below for details.",
+
+    knowledgeCatchUp = "If you start late or miss weeks, Patron Orders can grant catch-up knowledge until you are back on pace.",
+
+    treasures = {
+        { id = "sindorei_enchanting_rod", name = "Sin'dorei Enchanting Rod", zone = "Eversong Woods", mapID = 2395, x = 63.5, y = 32.6, questID = 89107, description = "Eversong Woods.", kp = 3 },
+        { id = "everblazing_sunmote", name = "Everblazing Sunmote", zone = "Eversong Woods", mapID = 2395, x = 60.8, y = 53.0, questID = 89103, description = "Eversong Woods.", kp = 3 },
+        { id = "enchanted_sunfire_silk", name = "Enchanted Sunfire Silk", zone = "Eversong Woods", mapID = 2395, x = 40.2, y = 61.2, questID = 89101, description = "Eversong Woods.", kp = 3 },
+        { id = "loa_blessed_dust", name = "Loa-Blessed Dust", zone = "Zul'Aman", mapID = 2437, x = 40.4, y = 51.1, questID = 89106, description = "Zul'Aman.", kp = 3 },
+        { id = "enchanted_amani_mask", name = "Enchanted Amani Mask", zone = "Zul'Aman (Atal'Aman)", mapID = 2536, x = 48.4, y = 22.9, questID = 89100, description = "Atal'Aman - may be phased.", kp = 3 },
+        { id = "primal_essence_orb", name = "Primal Essence Orb", zone = "Harandar", mapID = 2413, x = 65.8, y = 50.2, questID = 89105, description = "On giant mushroom trees.", kp = 3 },
+        { id = "entropic_shard", name = "Entropic Shard", zone = "Harandar", mapID = 2413, x = 37.7, y = 65.3, questID = 89104, description = "Harandar.", kp = 3 },
+        { id = "pure_void_crystal", name = "Pure Void Crystal", zone = "Voidstorm", mapID = 2405, x = 35.5, y = 58.8, questID = 89102, description = "Voidstorm.", kp = 3 },
+    },
+
 }

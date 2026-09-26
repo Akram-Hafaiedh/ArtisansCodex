@@ -242,6 +242,36 @@ private.Data.Alchemy = {
     -- =========================================================
     -- KNOWLEDGE TREASURES
     -- =========================================================
+    knowledgeOverview = "Alchemy Knowledge comes from one-time sources (8 treasures × 3 KP and a renown book for 10 KP) plus weekly sources. Patron Orders are the bulk of weekly KP (~12). Expect about 18 KP/week if you complete everything.",
+
+    knowledgeCatchUp = "If you fall behind, Patron Orders grant Flicker of Midnight Alchemy Knowledge until you catch up.",
+
+    oneTime = {
+        {
+            id = "renown_book",
+            name = "Beyond the Event Horizon: Alchemy",
+            kp = 10,
+            kind = "renown_book",
+            note = "Sold by Void Researcher Anomander in Voidstorm for 75 Artisan Alchemist's Moxie. Requires Renown 9 with The Singularity.",
+            vendor = "Void Researcher Anomander",
+            zone = "Voidstorm",
+        },
+    },
+
+    knowledgeTips = {
+        "You only need Skill 1 in the Midnight profession tier to loot knowledge treasures.",
+        "Treasures are character-specific — each alt can collect their own set.",
+        "If you are on the coords but see nothing: check inside buildings/caves, fly up/down for vertical position, or finish campaign phasing (Atal'Aman).",
+        "Trainer weekly quest unlocks after the Crafters Needed questline from Captain Flaresworn.",
+    },
+
+    knowledgeUnlock = {
+        questID = 93723,
+        questName = "Crafters Needed",
+        npcName = "Captain Flaresworn",
+        note = "Required to unlock the trainer weekly Knowledge quest.",
+    },
+
     treasures = {
         {
             id = "pristine_potion",

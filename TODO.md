@@ -49,13 +49,14 @@ CHANGELOG.md when they ship.
   - [ ] Quick stats: total KP, missing treasures, weekly KP progress
   - [ ] Recommended actions computed from open KP + nearby treasures
 
-- [ ] **Knowledge tab — real content**
-  - [ ] Treasure checklist driven by `profData.treasures` (Alchemy, Skinning have data now; still missing for most crafting professions)
-  - [ ] Completion persisted in `ArtisansCodexDB.completedTreasures`
-  - [ ] "Pin All Missing" sets waypoints for every uncollected treasure
-  - [ ] Weekly sources panel reads `profData.weekly`
-  - [ ] Profession filter bar (currently 5 hardcoded names, now 13 professions registered)
-
+- [x] **Knowledge tab — real content**
+  - [x] Treasure data for all 11 professions (scraped + added to data files)
+  - [x] Treasure checklist driven by `profData.treasures`
+  - [x] Live status via `C_QuestLog.IsQuestFlaggedCompleted(questID)`
+  - [x] "Pin" + "Pin All Missing" using `C_Map.SetUserWaypoint`
+  - [x] Weekly sources panel reads `profData.weekly`
+  - [x] Profession filter bar (dynamic, all professions with treasures)
+  - [ ] Optional cache in `ArtisansCodexDB.completedTreasures` (quest flag is primary source of truth)
 - [ ] **Specializations tab — real content**
   - [ ] Interactive tree visualization
   - [ ] Recommended builds driven by `profData.specializations` (only Alchemy has this filled in; Engineering/Inscription have partial builds; rest are missing)

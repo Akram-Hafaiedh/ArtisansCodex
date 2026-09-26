@@ -139,4 +139,49 @@ private.Data.Blacksmithing = {
             difficulty = "orange",
         },
     },
+
+    -- =========================================================
+    -- KNOWLEDGE TREASURES
+    -- =========================================================
+    knowledgeOverview = "Blacksmithing Knowledge comes from one-time sources (8 treasures × 3 KP and a renown book for 10 KP) plus weekly sources. Patron Orders are the bulk of weekly KP (~12). Expect about 19 KP/week if you complete everything.",
+
+    knowledgeCatchUp = "If you fall behind, Patron Orders grant Flicker of Midnight Blacksmithing Knowledge until you catch up.",
+
+    oneTime = {
+        {
+            id = "renown_book",
+            name = "Beyond the Event Horizon: Blacksmithing",
+            kp = 10,
+            kind = "renown_book",
+            note = "Sold by Void Researcher Anomander in Voidstorm for 75 Artisan Blacksmith's Moxie. Requires Renown 9 with The Singularity.",
+            vendor = "Void Researcher Anomander",
+            zone = "Voidstorm",
+        },
+    },
+
+    knowledgeTips = {
+        "You only need Skill 1 in the Midnight profession tier to loot knowledge treasures.",
+        "Treasures are character-specific — each alt can collect their own set.",
+        "If you are on the coords but see nothing: check inside buildings/caves, fly up/down for vertical position, or finish campaign phasing (Atal'Aman).",
+        "Trainer weekly quest unlocks after the Crafters Needed questline from Captain Flaresworn.",
+    },
+
+    knowledgeUnlock = {
+        questID = 93723,
+        questName = "Crafters Needed",
+        npcName = "Captain Flaresworn",
+        note = "Required to unlock the trainer weekly Knowledge quest.",
+    },
+
+    treasures = {
+        { id = "sindorei_masters_forgemace", name = "Sin'dorei Master's Forgemace", zone = "Silvermoon City", mapID = 2393, x = 49.2, y = 61.3, questID = 89183, description = "Silvermoon City.", kp = 3 },
+        { id = "silvermoon_blacksmiths_hammer", name = "Silvermoon Blacksmith's Hammer", zone = "Silvermoon City", mapID = 2393, x = 48.5, y = 74.7, questID = 89184, description = "Silvermoon City.", kp = 3 },
+        { id = "deconstructed_forge_techniques", name = "Deconstructed Forge Techniques", zone = "Silvermoon City", mapID = 2393, x = 26.9, y = 60.3, questID = 89177, description = "Silvermoon City.", kp = 3 },
+        { id = "metalworking_cheat_sheet", name = "Metalworking Cheat Sheet", zone = "Eversong Woods", mapID = 2395, x = 56.8, y = 40.8, questID = 89180, description = "Eversong Woods.", kp = 3 },
+        { id = "silvermoon_smithing_kit", name = "Silvermoon Smithing Kit", zone = "Eversong Woods", mapID = 2395, x = 48.3, y = 75.8, questID = 89178, description = "Eversong Woods.", kp = 3 },
+        { id = "carefully_racked_spear", name = "Carefully Racked Spear", zone = "Zul'Aman (Atal'Aman)", mapID = 2536, x = 33.2, y = 65.9, questID = 89179, description = "This treasure is in Atal'Aman and may be phased.", kp = 3 },
+        { id = "rutaani_floratenders_sword", name = "Rutaani Floratender's Sword", zone = "Harandar", mapID = 2413, x = 66.3, y = 50.9, questID = 89182, description = "On top of the mushroom.", kp = 3 },
+        { id = "voidstorm_defense_spear", name = "Voidstorm Defense Spear", zone = "Voidstorm (Slayer's Rise)", mapID = 2444, x = 30.6, y = 69.0, questID = 89181, description = "Voidstorm, Slaver's Rise.", kp = 3 },
+    },
+
 }

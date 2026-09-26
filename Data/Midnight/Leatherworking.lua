@@ -82,4 +82,20 @@ private.Data.Leatherworking = {
             isRecommended = true,
         },
     },
+
+    knowledgeOverview = "Leatherworking Knowledge comes from one-time treasures (usually 8×3 KP) and weekly sources such as Patron Orders, a trainer quest, zone drops, an Inscription treatise, and the monthly Darkmoon Faire. Check each row below for details.",
+
+    knowledgeCatchUp = "If you start late or miss weeks, Patron Orders can grant catch-up knowledge until you are back on pace.",
+
+    treasures = {
+        { id = "artisans_considered_order", name = "Artisan's Considered Order", zone = "Silvermoon City", mapID = 2393, x = 44.8, y = 56.2, questID = 89096, description = "Silvermoon City.", kp = 3 },
+        { id = "bundle_of_tanners_trinkets", name = "Bundle of Tanner's Trinkets", zone = "Zul'Aman (Atal'Aman)", mapID = 2536, x = 45.4, y = 45.5, questID = 89092, description = "Atal'Aman - may be phased.", kp = 3 },
+        { id = "amani_leatherworkers_tool", name = "Amani Leatherworker's Tool", zone = "Zul'Aman", mapID = 2437, x = 33.1, y = 78.9, questID = 89089, description = "Zul'Aman.", kp = 3 },
+        { id = "prestigiously_racked_hide", name = "Prestigiously Racked Hide", zone = "Zul'Aman", mapID = 2437, x = 30.8, y = 84.0, questID = 89091, description = "Zul'Aman.", kp = 3 },
+        { id = "ethereal_leatherworking_knife", name = "Ethereal Leatherworking Knife", zone = "Voidstorm", mapID = 2405, x = 34.7, y = 57.0, questID = 89090, description = "Voidstorm.", kp = 3 },
+        { id = "haranir_leatherworking_mallet", name = "Haranir Leatherworking Mallet", zone = "Harandar", mapID = 2413, x = 51.7, y = 51.3, questID = 89094, description = "Harandar.", kp = 3 },
+        { id = "haranir_leatherworking_knife", name = "Haranir Leatherworking Knife", zone = "Harandar", mapID = 2413, x = 36.1, y = 25.2, questID = 89095, description = "Harandar.", kp = 3 },
+        { id = "patterns_beyond_the_void", name = "Patterns: Beyond the Void", zone = "Voidstorm (Slayer's Rise)", mapID = 2444, x = 53.7, y = 51.7, questID = 89093, description = "Voidstorm, Slaver's Rise.", kp = 3 },
+    },
+
 }

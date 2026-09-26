@@ -144,4 +144,20 @@ private.Data.Inscription = {
             difficulty = "green",
         },
     },
+
+    knowledgeOverview = "Inscription Knowledge comes from one-time treasures (usually 8×3 KP) and weekly sources such as Patron Orders, a trainer quest, zone drops, an Inscription treatise, and the monthly Darkmoon Faire. Check each row below for details.",
+
+    knowledgeCatchUp = "If you start late or miss weeks, Patron Orders can grant catch-up knowledge until you are back on pace.",
+
+    treasures = {
+        { id = "songwriters_pen", name = "Songwriter's Pen", zone = "Silvermoon City", mapID = 2393, x = 47.7, y = 50.4, questID = 89073, description = "On top of the building behind the Alchemy trainer.", kp = 3 },
+        { id = "songwriters_quill", name = "Songwriter's Quill", zone = "Eversong Woods", mapID = 2395, x = 40.3, y = 61.2, questID = 89074, description = "Inside the building.", kp = 3 },
+        { id = "spare_ink", name = "Spare Ink", zone = "Eversong Woods", mapID = 2395, x = 48.3, y = 75.6, questID = 89069, description = "Eversong Woods.", kp = 3 },
+        { id = "half_baked_techniques", name = "Half-Baked Techniques", zone = "Eversong Woods", mapID = 2395, x = 39.3, y = 45.4, questID = 89072, description = "Eversong Woods.", kp = 3 },
+        { id = "leather_bound_techniques", name = "Leather-Bound Techniques", zone = "Zul'Aman", mapID = 2437, x = 40.5, y = 49.4, questID = 89068, description = "Inside the cave.", kp = 3 },
+        { id = "leftover_sanguithorn_pigment", name = "Leftover Sanguithorn Pigment", zone = "Harandar", mapID = 2413, x = 52.7, y = 50.0, questID = 89071, description = "Harandar.", kp = 3 },
+        { id = "intrepid_explorers_marker", name = "Intrepid Explorer's Marker", zone = "Harandar", mapID = 2413, x = 52.4, y = 52.6, questID = 89070, description = "Up on the roots.", kp = 3 },
+        { id = "void_touched_quill", name = "Void-Touched Quill", zone = "Voidstorm (Slayer's Rise)", mapID = 2444, x = 60.7, y = 84.3, questID = 89067, description = "Inside the building.", kp = 3 },
+    },
+
 }

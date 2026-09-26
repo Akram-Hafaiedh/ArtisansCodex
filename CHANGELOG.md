@@ -11,6 +11,9 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `Mining.lua`, `Herbalism.lua`, `Skinning.lua`, `Fishing.lua` — new gathering-profession data (`isGathering = true`, skill-range steps instead of recipes, plus `zones`/`equipment`/`consumables`/`infusedTypes` tables)
 - `Cooking.lua` — new leveling data
 - All 8 new profession files registered in `ArtisansCodex.toc` under `# Data`
+- **Knowledge Treasures data** for all 11 professions
+- **Knowledge tab rewritten** — dynamic profession filter, live Collected/Missing via `C_QuestLog.IsQuestFlaggedCompleted`, working Pin / Pin All Missing map waypoints, weekly sources panel when data exists, sorted missing-first list with tooltips.
+ that have them (Alchemy, Blacksmithing, Enchanting, Engineering, Herbalism, Inscription, Jewelcrafting, Leatherworking, Mining, Skinning, Tailoring). Scraped from wow-professions.com treasure hub. Each entry includes name, zone, mapID, x/y, questID, description, and kp=3. Ready for the Knowledge tab.
 
 ### Changed
 - `Alchemy.lua` — rewritten. The previous file had incorrect item IDs (Tranquility Bloom, Sanguithorn, Mana Lily, Azeroot, Argentleaf, and Oil of Heartwood were mismatched) and an incomplete First Crafts list. Now matches the current wow-professions.com leveling guide, with a Potions/Flasks fork for 50-100.

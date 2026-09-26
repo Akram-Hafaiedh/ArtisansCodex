@@ -213,6 +213,10 @@ private.Data.Engineering = {
     -- =========================================================
     -- KNOWLEDGE TREASURES
     -- =========================================================
+    knowledgeOverview = "Engineering Knowledge comes from one-time treasures (usually 8×3 KP) and weekly sources such as Patron Orders, a trainer quest, zone drops, an Inscription treatise, and the monthly Darkmoon Faire. Check each row below for details.",
+
+    knowledgeCatchUp = "If you start late or miss weeks, Patron Orders can grant catch-up knowledge until you are back on pace.",
+
     treasures = {
         { id = "one_engineers_junk", name = "One Engineer's Junk", zone = "Silvermoon City", mapID = 2393, x = 51.2, y = 74.6, questID = 89133, kp = 3 },
         { id = "what_to_do", name = "What To Do When Nothing Works", zone = "Silvermoon City", mapID = 2393, x = 51.3, y = 57.0, questID = 89139, kp = 3 },

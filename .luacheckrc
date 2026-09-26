@@ -43,6 +43,7 @@ read_globals = {
     "C_Map",
     "C_Professions",
     "C_ProfSpecs",
+    "C_QuestLog",
     "C_SuperTrack",
     "C_Timer",
     "C_TradeSkillUI",
@@ -51,6 +52,9 @@ read_globals = {
     "GetProfessions",
     "GetProfessionInfo",
     "GetItemInfo",
+    "GetItemIcon",
+    "GetItemQualityColor",
+    "ITEM_QUALITY_COLORS",
     "GetLocale",
     "ReloadUI",
 
@@ -70,4 +74,8 @@ read_globals = {
 
 ignore = {
     "212", -- unused argument (frame callbacks often ignore the frame arg)
+}
+
+exclude_files = {
+    "Libs",
 }

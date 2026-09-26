@@ -73,6 +73,10 @@ private.Data.Skinning = {
     -- =========================================================
     -- KNOWLEDGE TREASURES
     -- =========================================================
+    knowledgeOverview = "Skinning Knowledge comes from one-time treasures (usually 8×3 KP) and weekly sources such as Patron Orders, a trainer quest, zone drops, an Inscription treatise, and the monthly Darkmoon Faire. Check each row below for details.",
+
+    knowledgeCatchUp = "If you start late or miss weeks, Patron Orders can grant catch-up knowledge until you are back on pace.",
+
     treasures = {
         { id = "sindorei_tanning_oil", name = "Sin'dorei Tanning Oil", zone = "Silvermoon City", mapID = 2393, x = 43.2, y = 55.7, questID = 89171, kp = 3 },
         { id = "thalassian_skinning_knife", name = "Thalassian Skinning Knife", zone = "Eversong Woods", mapID = 2395, x = 48.4, y = 76.3, questID = 89173, kp = 3 },
