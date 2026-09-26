@@ -18,6 +18,30 @@ local defaults = {
     completedTreasures = {},
     lastSeenSkill = {},
     debug = true,
+
+    -- Account Progress (multi-character card overview)
+    -- characters[GUID] = snapshot written while that toon is logged in
+    -- tracked[GUID] = false hides the character from the Progress panel
+    -- cardChips controls which status chips appear on cards
+    progress = {
+        characters = {},
+        tracked = {},
+        cardChips = {
+            skill = true,
+            concentration = true,
+            knowledge = true,
+            notebook = true,   -- Weekly Quest
+            zoneDrops = true,  -- Uniques
+            treatise = true,
+            treasures = true,
+            firstCrafts = true,
+            catchUp = true,
+            gathering = true,
+            moxie = true,
+            darkmoon = true,   -- shown only when Faire is active
+        },
+        weeklyReset = 0, -- GetServerTime() of next weekly reset after last clear
+    },
 }
 
 -- Simple function to copy default settings
@@ -86,6 +110,562 @@ function addon:InitDB()
 end
 
 -- ============================================================
+-- ACCOUNT PROGRESS — character cache schema & helpers
+-- ============================================================
+-- Per-character snapshot shape (written only while that toon is logged in):
+-- {
+--   guid, name, realm, classID, classFile, level, lastUpdate,
+--   professions = {
+--     [professionName] = {
+--       name, skillLineID, skillLevel, skillMaxLevel,
+--       concentration = { quantity, maxQuantity },  -- optional
+--       weekly = {
+--         patron    = { done, progress, max },
+--         notebook  = { done },
+--         zoneDrops = { done, progress, max },
+--         treatise  = { done },
+--         darkmoon  = { done },
+--       },
+--       treasures   = { collected, total },
+--       firstCrafts = { done, total },
+--       catchUp     = { quantity, maxQuantity },
+--       gathering   = { done, progress, max },      -- gathering professions
+--     },
+--   },
+--   completedQuests = { [questID] = true },  -- for weekly reset clearing
+-- }
+
+local function EmptyProfessionSnapshot(name, skillLineID)
+    return {
+        name = name or "?",
+        skillLineID = skillLineID,
+        skillLevel = 0,
+        skillMaxLevel = 0,
+        concentration = nil,
+        weekly = {
+            patron    = { done = false, progress = 0, max = nil },
+            notebook  = { done = false },
+            zoneDrops = { done = false, progress = 0, max = nil },
+            treatise  = { done = false },
+            darkmoon  = { done = false },
+        },
+        treasures   = { collected = 0, total = 0 },
+        firstCrafts = { done = 0, total = 0 },
+        catchUp     = { quantity = 0, maxQuantity = 0 },
+        gathering   = { done = false, progress = 0, max = 0 },
+        moxie       = { quantity = 0, maxQuantity = 0 },
+    }
+end
+
+function addon:GetPlayerGUID()
+    return UnitGUID("player")
+end
+
+--- Ensure progress tables exist (safe after old SV loads).
+function addon:EnsureProgressDB()
+    local db = self.db
+    if type(db.progress) ~= "table" then
+        db.progress = CopyDefaults(defaults.progress, {})
+    end
+    db.progress.characters = db.progress.characters or {}
+    db.progress.tracked = db.progress.tracked or {}
+    db.progress.cardChips = CopyDefaults(defaults.progress.cardChips, db.progress.cardChips or {})
+    if type(db.progress.weeklyReset) ~= "number" then
+        db.progress.weeklyReset = 0
+    end
+    return db.progress
+end
+
+--- Get or create the snapshot for a GUID (defaults to current player).
+function addon:GetCharacterSnapshot(guid)
+    local progress = self:EnsureProgressDB()
+    guid = guid or self:GetPlayerGUID()
+    if not guid then return nil end
+
+    if not progress.characters[guid] then
+        progress.characters[guid] = {
+            guid = guid,
+            name = "",
+            realm = "",
+            classID = 0,
+            classFile = nil,
+            level = 0,
+            lastUpdate = 0,
+            professions = {},
+            completedQuests = {},
+        }
+    end
+    local char = progress.characters[guid]
+    char.professions = char.professions or {}
+    char.completedQuests = char.completedQuests or {}
+    return char
+end
+
+--- Whether this character should appear on the Progress panel.
+function addon:IsCharacterTracked(guid)
+    local progress = self:EnsureProgressDB()
+    if progress.tracked[guid] == false then
+        return false
+    end
+    return true -- default: tracked once we have a snapshot
+end
+
+function addon:SetCharacterTracked(guid, tracked)
+    local progress = self:EnsureProgressDB()
+    progress.tracked[guid] = tracked and true or false
+end
+
+--- Sorted list of character snapshots (tracked only by default).
+function addon:GetTrackedCharacters(includeUntracked)
+    local progress = self:EnsureProgressDB()
+    local list = {}
+    for guid, char in pairs(progress.characters) do
+        if includeUntracked or self:IsCharacterTracked(guid) then
+            list[#list + 1] = char
+        end
+    end
+    table.sort(list, function(a, b)
+        local aT, bT = a.lastUpdate or 0, b.lastUpdate or 0
+        if aT ~= bT then return aT > bT end
+        return (a.name or "") < (b.name or "")
+    end)
+    return list
+end
+
+function addon:DeleteCharacterSnapshot(guid)
+    local progress = self:EnsureProgressDB()
+    if not guid then return end
+    progress.characters[guid] = nil
+    progress.tracked[guid] = nil
+end
+
+--- Card chip visibility (which stats show on character cards).
+function addon:IsCardChipVisible(chipKey)
+    local progress = self:EnsureProgressDB()
+    return progress.cardChips[chipKey] ~= false
+end
+
+function addon:SetCardChipVisible(chipKey, visible)
+    local progress = self:EnsureProgressDB()
+    progress.cardChips[chipKey] = visible and true or false
+end
+
+--- Clear weekly-only quest flags after weekly reset (treasures / first crafts stay).
+function addon:TaskWeeklyReset()
+    local progress = self:EnsureProgressDB()
+    local now = GetServerTime()
+    local secondsUntil = C_DateAndTime and C_DateAndTime.GetSecondsUntilWeeklyReset
+        and C_DateAndTime.GetSecondsUntilWeeklyReset() or 0
+
+    if type(progress.weeklyReset) == "number" and progress.weeklyReset > 0 and progress.weeklyReset <= now then
+        -- Collect weekly quest IDs from profession data files when available
+        local weeklyQuestIDs = {}
+        if private.Data then
+            for _, profData in pairs(private.Data) do
+                if type(profData) == "table" and type(profData.weekly) == "table" then
+                    for _, src in ipairs(profData.weekly) do
+                        if src.unlockQuestID then
+                            weeklyQuestIDs[src.unlockQuestID] = true
+                        end
+                        if src.questID then
+                            weeklyQuestIDs[src.questID] = true
+                        end
+                        if type(src.questIDs) == "table" then
+                            for _, qid in ipairs(src.questIDs) do
+                                weeklyQuestIDs[qid] = true
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
+        for _, char in pairs(progress.characters) do
+            if type(char.completedQuests) == "table" then
+                for qid in pairs(weeklyQuestIDs) do
+                    char.completedQuests[qid] = nil
+                end
+            end
+            if type(char.professions) == "table" then
+                for _, prof in pairs(char.professions) do
+                    if prof.weekly then
+                        for _, key in ipairs({ "patron", "notebook", "zoneDrops", "treatise", "darkmoon" }) do
+                            local w = prof.weekly[key]
+                            if w then
+                                w.done = false
+                                if w.progress ~= nil then w.progress = 0 end
+                            end
+                        end
+                    end
+                    if prof.gathering then
+                        prof.gathering.done = false
+                        prof.gathering.progress = 0
+                    end
+                end
+            end
+        end
+        private:Print("Weekly reset applied to cached character progress.")
+    end
+
+    progress.weeklyReset = now + secondsUntil
+end
+
+--- Identity fields for the logged-in character.
+function addon:ScanCharacterInfo()
+    local char = self:GetCharacterSnapshot()
+    if not char then return end
+
+    char.name = UnitName("player") or char.name
+    char.realm = GetNormalizedRealmName and GetNormalizedRealmName() or (GetRealmName and GetRealmName()) or char.realm
+    char.level = UnitLevel("player") or char.level
+    local _, classFile, classID = UnitClass("player")
+    char.classFile = classFile or char.classFile
+    char.classID = classID or char.classID
+    char.guid = self:GetPlayerGUID() or char.guid
+    char.lastUpdate = GetServerTime()
+end
+
+local function EnsureProfSnap(char, name, skillLineID)
+    local snap = char.professions[name]
+    if not snap then
+        snap = EmptyProfessionSnapshot(name, skillLineID)
+        char.professions[name] = snap
+    end
+    return snap
+end
+
+local function IsQuestComplete(questID)
+    if not questID or not C_QuestLog or not C_QuestLog.IsQuestFlaggedCompleted then
+        return false
+    end
+    return C_QuestLog.IsQuestFlaggedCompleted(questID)
+end
+
+--- Profession skill levels for the logged-in character (names must match Data keys).
+function addon:ScanProfessionSkills()
+    local char = self:GetCharacterSnapshot()
+    if not char then return end
+
+    local prof1, prof2 = GetProfessions()
+    for _, idx in ipairs({ prof1, prof2 }) do
+        if idx then
+            local name, _, skillLevel, maxSkill, _, _, skillLine = GetProfessionInfo(idx)
+            if name then
+                local snap = EnsureProfSnap(char, name, skillLine)
+                snap.name = name
+                snap.skillLineID = skillLine
+                snap.skillLevel = skillLevel or 0
+                snap.skillMaxLevel = maxSkill or 0
+            end
+        end
+    end
+    char.lastUpdate = GetServerTime()
+end
+
+--- Concentration + catch-up KP currencies (Blizzard hidden trackers).
+function addon:ScanCurrencies()
+    local char = self:GetCharacterSnapshot()
+    if not char then return end
+    char.currencies = char.currencies or {}
+
+    local metaTable = private.ProgressMeta
+    if not metaTable or not metaTable.professions then return end
+    if not C_CurrencyInfo or not C_CurrencyInfo.GetCurrencyInfo then return end
+
+    for profName, meta in pairs(metaTable.professions) do
+        local snap = char.professions[profName]
+        -- Only fill currency fields for professions this character has learned
+        if snap then
+            if meta.concentrationCurrencyID and meta.concentrationCurrencyID > 0 then
+                local info = C_CurrencyInfo.GetCurrencyInfo(meta.concentrationCurrencyID)
+                if info then
+                    snap.concentration = {
+                        currencyID = meta.concentrationCurrencyID,
+                        quantity = info.quantity or 0,
+                        maxQuantity = info.maxQuantity or 0,
+                    }
+                    char.currencies[meta.concentrationCurrencyID] = {
+                        id = meta.concentrationCurrencyID,
+                        quantity = info.quantity or 0,
+                        maxQuantity = info.maxQuantity or 0,
+                        lastUpdated = GetServerTime(),
+                    }
+                end
+            end
+
+            if meta.catchUpCurrencyID and meta.catchUpCurrencyID > 0 then
+                local info = C_CurrencyInfo.GetCurrencyInfo(meta.catchUpCurrencyID)
+                if info then
+                    local qty = info.quantity or 0
+                    local maxQ = info.maxQuantity or 0
+                    snap.catchUp = {
+                        currencyID = meta.catchUpCurrencyID,
+                        quantity = qty,
+                        maxQuantity = maxQ,
+                    }
+                    -- Patron / weekly KP progress is primarily this currency (earned vs weekly cap)
+                    snap.weekly = snap.weekly or EmptyProfessionSnapshot(profName).weekly
+                    snap.weekly.patron.progress = qty
+                    snap.weekly.patron.max = maxQ > 0 and maxQ or nil
+                    snap.weekly.patron.done = (maxQ > 0 and qty >= maxQ) or false
+
+                    char.currencies[meta.catchUpCurrencyID] = {
+                        id = meta.catchUpCurrencyID,
+                        quantity = qty,
+                        maxQuantity = maxQ,
+                        lastUpdated = GetServerTime(),
+                    }
+                end
+            end
+
+            -- Artisan <Profession>'s Moxie (spendable profession currency)
+            if meta.moxieCurrencyID and meta.moxieCurrencyID > 0 then
+                local info = C_CurrencyInfo.GetCurrencyInfo(meta.moxieCurrencyID)
+                if info then
+                    snap.moxie = {
+                        currencyID = meta.moxieCurrencyID,
+                        quantity = info.quantity or 0,
+                        maxQuantity = info.maxQuantity or 0,
+                    }
+                    char.currencies[meta.moxieCurrencyID] = {
+                        id = meta.moxieCurrencyID,
+                        quantity = info.quantity or 0,
+                        maxQuantity = info.maxQuantity or 0,
+                        lastUpdated = GetServerTime(),
+                    }
+                end
+            end
+
+            -- Knowledge points (unspent from specialization currency; spent/max when profession UI known)
+            snap.knowledge = snap.knowledge or { unspent = 0, spent = 0, max = 0 }
+            if meta.variantID and C_ProfSpecs and C_ProfSpecs.GetCurrencyInfoForSkillLine then
+                local ok, info = pcall(C_ProfSpecs.GetCurrencyInfoForSkillLine, meta.variantID)
+                if ok and info then
+                    snap.knowledge.unspent = info.numAvailable or info.quantity or 0
+                end
+            end
+            if meta.variantID and C_TradeSkillUI and C_TradeSkillUI.GetProfessionInfoBySkillLineID then
+                local ok, pinfo = pcall(C_TradeSkillUI.GetProfessionInfoBySkillLineID, meta.variantID)
+                if ok and pinfo then
+                    -- professionInfo may expose knowledge fields depending on client build
+                    if pinfo.knowledgeLevel then
+                        snap.knowledge.spent = pinfo.knowledgeLevel or snap.knowledge.spent
+                    end
+                    if pinfo.maxKnowledgeLevel then
+                        snap.knowledge.max = pinfo.maxKnowledgeLevel or snap.knowledge.max
+                    end
+                end
+            end
+        end
+    end
+    char.lastUpdate = GetServerTime()
+end
+
+--- Catch-up items in bags (Flicker / gathering catch-up reagents).
+function addon:ScanCatchUpItems()
+    local char = self:GetCharacterSnapshot()
+    if not char then return end
+    char.items = char.items or {}
+
+    local metaTable = private.ProgressMeta
+    if not metaTable or not metaTable.professions then return end
+
+    for profName, meta in pairs(metaTable.professions) do
+        if meta.catchUpItemID and meta.catchUpItemID > 0 then
+            local count = self:GetItemCount(meta.catchUpItemID) or 0
+            char.items[meta.catchUpItemID] = count
+            local snap = char.professions[profName]
+            if snap then
+                snap.catchUp = snap.catchUp or { quantity = 0, maxQuantity = 0 }
+                snap.catchUp.itemID = meta.catchUpItemID
+                snap.catchUp.itemCount = count
+            end
+        end
+    end
+    char.lastUpdate = GetServerTime()
+end
+
+--- Gathering / disenchant weekly knowledge drops (quest flags).
+function addon:ScanGathering()
+    local char = self:GetCharacterSnapshot()
+    if not char then return end
+
+    local metaTable = private.ProgressMeta
+    if not metaTable or not metaTable.professions then return end
+
+    for profName, meta in pairs(metaTable.professions) do
+        local quests = meta.gatheringQuests
+        if type(quests) == "table" and #quests > 0 then
+            local snap = char.professions[profName]
+            if snap then
+                local doneCount = 0
+                for _, qid in ipairs(quests) do
+                    if IsQuestComplete(qid) then
+                        doneCount = doneCount + 1
+                        char.completedQuests[qid] = true
+                    end
+                end
+                local total = #quests
+                snap.gathering = {
+                    done = doneCount >= total,
+                    progress = doneCount,
+                    max = total,
+                }
+            end
+        end
+    end
+    char.lastUpdate = GetServerTime()
+end
+
+--- First-craft KP: uses C_TradeSkillUI.IsRecipeFirstCraft when profession data is available.
+--- Scans open profession recipes; also checks any spellIDs already stored on the snapshot.
+function addon:ScanFirstCrafts()
+    local char = self:GetCharacterSnapshot()
+    if not char then return end
+    char.firstCrafts = char.firstCrafts or {}
+
+    local function noteFirstCraft(spellID, stillAvailable)
+        if not spellID or spellID == 0 then return end
+        -- stillAvailable == true means first-craft bonus is still claimable
+        char.firstCrafts[spellID] = stillAvailable and true or false
+    end
+
+    if C_TradeSkillUI and C_TradeSkillUI.GetAllRecipeIDs and C_TradeSkillUI.IsRecipeFirstCraft then
+        local recipeIDs = C_TradeSkillUI.GetAllRecipeIDs()
+        if type(recipeIDs) == "table" then
+            for _, recipeID in ipairs(recipeIDs) do
+                local info = C_TradeSkillUI.GetRecipeInfo and C_TradeSkillUI.GetRecipeInfo(recipeID)
+                local spellID = info and (info.recipeID or info.spellID or recipeID)
+                local ok, stillFirst = pcall(C_TradeSkillUI.IsRecipeFirstCraft, spellID or recipeID)
+                if ok and stillFirst ~= nil then
+                    noteFirstCraft(spellID or recipeID, stillFirst)
+                end
+            end
+        end
+    end
+
+    -- Aggregate per learned profession (available first crafts remaining)
+    for profName, snap in pairs(char.professions) do
+        local available, total = 0, 0
+        -- Without a full Midnight first-craft catalog, total is "known scanned recipes"
+        -- and done = those no longer first-craft eligible.
+        for spellID, stillAvailable in pairs(char.firstCrafts) do
+            total = total + 1
+            if stillAvailable then
+                available = available + 1
+            end
+        end
+        -- Per-profession split needs recipe→profession mapping; store character-wide for now
+        snap.firstCrafts = {
+            done = total - available,
+            total = total,
+            available = available,
+        }
+    end
+    char.lastUpdate = GetServerTime()
+end
+
+--- Treasure progress from guide data + quest flags (only for learned professions).
+function addon:ScanTreasures()
+    local char = self:GetCharacterSnapshot()
+    if not char or not private.Data then return end
+
+    for profName, snap in pairs(char.professions) do
+        local profData = private.Data[profName]
+        if type(profData) == "table" and type(profData.treasures) == "table" then
+            local treasures = profData.treasures
+            local total = #treasures
+            local collected = 0
+            for _, t in ipairs(treasures) do
+                if t.questID and IsQuestComplete(t.questID) then
+                    collected = collected + 1
+                    char.completedQuests[t.questID] = true
+                end
+            end
+            snap.treasures = { collected = collected, total = total }
+        end
+    end
+    char.lastUpdate = GetServerTime()
+end
+
+--- Weekly sources: quest flags from guide data + catch-up currency for Patron progress.
+function addon:ScanWeeklySources()
+    local char = self:GetCharacterSnapshot()
+    if not char or not private.Data then return end
+
+    for profName, snap in pairs(char.professions) do
+        local profData = private.Data[profName]
+        if type(profData) == "table" and type(profData.weekly) == "table" then
+            snap.weekly = snap.weekly or EmptyProfessionSnapshot(profName).weekly
+
+            for _, src in ipairs(profData.weekly) do
+                local name = (src.name or ""):lower()
+                local done = false
+                local progress, maxProg
+
+                if src.questID and IsQuestComplete(src.questID) then
+                    done = true
+                    char.completedQuests[src.questID] = true
+                end
+                if type(src.questIDs) == "table" then
+                    local c, t = 0, #src.questIDs
+                    for _, qid in ipairs(src.questIDs) do
+                        if IsQuestComplete(qid) then
+                            c = c + 1
+                            char.completedQuests[qid] = true
+                        end
+                    end
+                    progress, maxProg = c, t
+                    done = t > 0 and c >= t
+                end
+                if src.unlockQuestID and IsQuestComplete(src.unlockQuestID) then
+                    char.completedQuests[src.unlockQuestID] = true
+                end
+
+                local function apply(key)
+                    local w = snap.weekly[key]
+                    if not w then return end
+                    w.done = done
+                    if progress ~= nil then w.progress = progress end
+                    if maxProg ~= nil then w.max = maxProg end
+                end
+
+                if name:find("patron") then
+                    -- Prefer currency-based progress from ScanCurrencies; only set done via quest if present
+                    if src.questID or src.questIDs then
+                        apply("patron")
+                    end
+                elseif name:find("notebook") or name:find("trainer") or name:find("weekly quest") then
+                    apply("notebook")
+                elseif name:find("zone") or name:find("drop") or name:find("gathering") then
+                    apply("zoneDrops")
+                elseif name:find("treatise") then
+                    apply("treatise")
+                elseif name:find("darkmoon") then
+                    apply("darkmoon")
+                end
+            end
+        end
+    end
+    char.lastUpdate = GetServerTime()
+end
+
+--- Full refresh for the logged-in character. Safe to call often.
+function addon:ScanCurrentCharacter()
+    if InCombatLockdown and InCombatLockdown() then return end
+    self:EnsureProgressDB()
+    self:ScanCharacterInfo()
+    self:ScanProfessionSkills()
+    self:ScanCurrencies()
+    self:ScanCatchUpItems()
+    self:ScanGathering()
+    self:ScanTreasures()
+    self:ScanWeeklySources()
+    self:ScanFirstCrafts()
+    private:Print("Progress snapshot updated for", UnitName("player") or "?")
+end
+
+-- ============================================================
 -- EVENT HANDLING
 -- ============================================================
 local eventFrame = CreateFrame("Frame")
@@ -96,13 +676,19 @@ eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "ADDON_LOADED" and ... == addonName then
         addon:InitDB()
+        addon:EnsureProgressDB()
         addon:OnInitialize()
     elseif event == "PLAYER_LOGIN" then
         addon:OnEnable()
+        addon:TaskWeeklyReset()
+        addon:ScanCurrentCharacter()
     elseif event == "PLAYER_ENTERING_WORLD" then
         local isLogin, isReload = ...
         if (isLogin or isReload) and private.DataLoader then
             private.DataLoader:Load()
+        end
+        if isLogin or isReload then
+            addon:ScanCurrentCharacter()
         end
     end
 end)
@@ -119,6 +705,7 @@ function addon:OnInitialize()
         private.Leveling,
         private.Specializations,
         private.Knowledge,
+        private.Progress,
     }) do
         if mod and mod.Initialize then
             mod:Initialize()
@@ -163,6 +750,12 @@ function addon:SlashCommand(input)
 
     if input == "" or input == "open" or input == "show" then
         self:ToggleMainFrame()
+    elseif input == "progress" or input == "cards" then
+        if private.Progress and private.Progress.Toggle then
+            private.Progress:Toggle()
+        else
+            private:Print("Progress module not loaded.")
+        end
     elseif input == "debug" then
         self.db.debug = not self.db.debug
         private.debug = self.db.debug
@@ -172,9 +765,10 @@ function addon:SlashCommand(input)
         ReloadUI()
     else
         print("|cff00ccffArtisan's Codex|r commands:")
-        print("  |cffffff00/ac|r         - Open/Close main window")
-        print("  |cffffff00/ac debug|r   - Toggle debug messages")
-        print("  |cffffff00/ac reset|r   - Reset all settings")
+        print("  |cffffff00/ac|r          - Open/Close main window")
+        print("  |cffffff00/ac progress|r - Account progress cards")
+        print("  |cffffff00/ac debug|r    - Toggle debug messages")
+        print("  |cffffff00/ac reset|r    - Reset all settings")
     end
 end
 

@@ -11,6 +11,7 @@ Core.lua
 Locales/enUS.lua
 
 # Data
+Data/Midnight/ProgressMeta.lua
 Data/Midnight/Alchemy.lua
 Data/Midnight/Tailoring.lua
 Data/Midnight/Engineering.lua
@@ -26,6 +27,7 @@ Data/Midnight/Cooking.lua
 Data/Midnight/Fishing.lua
 
 # Modules
+Modules/Progress.lua
 Modules/DataLoader.lua
 Modules/Dashboard.lua
 Modules/Leveling.lua
