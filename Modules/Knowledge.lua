@@ -272,7 +272,7 @@ function addon:BuildKnowledge()
     -- ---------- HEADER + TAB LINKS ----------
     local header = CreateFrame("Frame", nil, content, "BackdropTemplate")
     header:SetPoint("TOPLEFT", 0, y)
-    header:SetSize(width, 52)
+    header:SetSize(width, 82)
     header:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -295,7 +295,25 @@ function addon:BuildKnowledge()
     ))
     headerSub:SetTextColor(0.75, 0.75, 0.75)
 
-    -- Cross-links (in-game equivalent of related guide pages)
+    -- Live specialization KP from Artisan's Progress scan (this character)
+    local snap = self.GetProfessionSnapshot and self:GetProfessionSnapshot(self.selectedKnowledgeProf)
+    local kSpent = snap and snap.knowledge and snap.knowledge.spent or 0
+    local kMax = snap and snap.knowledge and snap.knowledge.max or 0
+    local kUnspent = snap and snap.knowledge and snap.knowledge.unspent or 0
+    if self.CreateStatusMeter then
+        local meter = self:CreateStatusMeter(header, {
+            width = math.min(280, width - 32),
+            height = 14,
+            value = kSpent,
+            maxValue = kMax,
+            unspent = kUnspent,
+            r = 0.45, g = 0.75, b = 1.0,
+            emptyText = "Open profession to scan KP",
+        })
+        meter:SetPoint("TOPLEFT", 16, -52)
+    end
+
+    -- Cross-links
     local linkX = width - 16
     local function TabLink(label, tabKey)
         local btn = CreateFrame("Button", nil, header, "UIPanelButtonTemplate")
@@ -317,7 +335,7 @@ function addon:BuildKnowledge()
     TabLink("Leveling", "leveling")
     TabLink("Specs", "specializations")
 
-    y = y - 60
+    y = y - 92
 
     -- ---------- WHAT CHANGED ----------
     if #changes > 0 then

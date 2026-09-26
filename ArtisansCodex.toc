@@ -10,22 +10,55 @@ Init.lua
 Core.lua
 Locales/enUS.lua
 
-# Data
+# Shared progress / first-craft catalogs
 Data/Midnight/ProgressMeta.lua
 Data/Midnight/FirstCrafts.lua
-Data/Midnight/Alchemy.lua
-Data/Midnight/Tailoring.lua
-Data/Midnight/Engineering.lua
-Data/Midnight/Inscription.lua
-Data/Midnight/Blacksmithing.lua
-Data/Midnight/Enchanting.lua
-Data/Midnight/Jewelcrafting.lua
-Data/Midnight/Leatherworking.lua
-Data/Midnight/Mining.lua
-Data/Midnight/Herbalism.lua
-Data/Midnight/Skinning.lua
-Data/Midnight/Cooking.lua
-Data/Midnight/Fishing.lua
+
+
+# Leveling data (per profession) — includes name, icon, specializations
+Data/Midnight/Leveling/Alchemy.lua
+Data/Midnight/Leveling/Blacksmithing.lua
+Data/Midnight/Leveling/Enchanting.lua
+Data/Midnight/Leveling/Engineering.lua
+Data/Midnight/Leveling/Inscription.lua
+Data/Midnight/Leveling/Jewelcrafting.lua
+Data/Midnight/Leveling/Leatherworking.lua
+Data/Midnight/Leveling/Mining.lua
+Data/Midnight/Leveling/Herbalism.lua
+Data/Midnight/Leveling/Skinning.lua
+Data/Midnight/Leveling/Tailoring.lua
+Data/Midnight/Leveling/Cooking.lua
+Data/Midnight/Leveling/Fishing.lua
+
+# Knowledge data (treasures, weekly, one-time)
+Data/Midnight/Knowledge/Alchemy.lua
+Data/Midnight/Knowledge/Blacksmithing.lua
+Data/Midnight/Knowledge/Enchanting.lua
+Data/Midnight/Knowledge/Engineering.lua
+Data/Midnight/Knowledge/Inscription.lua
+Data/Midnight/Knowledge/Jewelcrafting.lua
+Data/Midnight/Knowledge/Leatherworking.lua
+Data/Midnight/Knowledge/Mining.lua
+Data/Midnight/Knowledge/Herbalism.lua
+Data/Midnight/Knowledge/Skinning.lua
+Data/Midnight/Knowledge/Tailoring.lua
+Data/Midnight/Knowledge/Cooking.lua
+Data/Midnight/Knowledge/Fishing.lua
+
+# Recipe browser catalogs
+Data/Midnight/Recipes/Alchemy.lua
+Data/Midnight/Recipes/Blacksmithing.lua
+Data/Midnight/Recipes/Enchanting.lua
+Data/Midnight/Recipes/Engineering.lua
+Data/Midnight/Recipes/Inscription.lua
+Data/Midnight/Recipes/Jewelcrafting.lua
+Data/Midnight/Recipes/Leatherworking.lua
+Data/Midnight/Recipes/Mining.lua
+Data/Midnight/Recipes/Herbalism.lua
+Data/Midnight/Recipes/Skinning.lua
+Data/Midnight/Recipes/Tailoring.lua
+Data/Midnight/Recipes/Cooking.lua
+Data/Midnight/Recipes/Fishing.lua
 
 # Modules
 Modules/Progress.lua

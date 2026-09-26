@@ -1,0 +1,38 @@
+-- Midnight Tailoring recipes
+-- Sources: wow-professions.com + wowhead.com Midnight Tailoring guides (12.0/12.1)
+-- Reagent amounts are per single craft where known; itemIDs cross-checked against guide data.
+
+local _, private = ...
+private.RecipeData = private.RecipeData or {}
+
+private.RecipeData.Tailoring = {
+  { name = [[Bright Linen Bolt]], itemID = 239700, skill = 1, source = [[Trainer]], category = [[Reagents]], reagents = {{name="Bright Linen",itemID=236963,amount=1},}, note = [[Primary leveling bolt]] },
+  { name = [[Imbued Bright Linen Bolt]], itemID = 239702, skill = 25, source = [[Trainer]], category = [[Reagents]], reagents = {{name="Bright Linen Bolt",itemID=239700,amount=2},{name="Silverleaf Thread",itemID=251665,amount=8},{name="Eversinging Dust",itemID=243599,amount=2},}, note = [[Unlocks with specializations at 25]] },
+  { name = [[Arcanoweave Bolt]], itemID = 239198, skill = 50, source = [[Spec: Nimble Needlework]], category = [[Reagents]], reagents = {{name="Mote of Wild Magic",itemID=0,amount=4},{name="Arcanoweave",itemID=237016,amount=5},{name="Imbued Bright Linen Bolt",itemID=239702,amount=6},}, note = [[Daily cooldown]] },
+  { name = [[Sunfire Silk Bolt]], itemID = 239201, skill = 50, source = [[Spec: Nimble Needlework]], category = [[Reagents]], reagents = {{name="Mote of Light",itemID=236949,amount=4},{name="Sunfire Silk",itemID=237015,amount=5},{name="Imbued Bright Linen Bolt",itemID=239702,amount=6},}, note = [[Daily cooldown]] },
+  { name = [[Courtly Helm]], itemID = 239670, skill = 15, source = [[Trainer]], category = [[Armor]], reagents = {{name="Bright Linen Bolt",itemID=239700,amount=3},{name="Silverleaf Thread",itemID=251665,amount=4},{name="Embroidery Floss",itemID=251691,amount=3},} },
+  { name = [[Courtly Shoulders]], itemID = 239675, skill = 15, source = [[Trainer]], category = [[Armor]], reagents = {{name="Bright Linen Bolt",itemID=239700,amount=2},{name="Silverleaf Thread",itemID=251665,amount=3},{name="Embroidery Floss",itemID=251691,amount=1},} },
+  { name = [[Courtly Cloak]], itemID = 239678, skill = 15, source = [[Trainer]], category = [[Armor]], reagents = {{name="Bright Linen Bolt",itemID=239700,amount=2},{name="Silverleaf Thread",itemID=251665,amount=3},} },
+  { name = [[Courtly Robes]], itemID = 239680, skill = 20, source = [[Trainer]], category = [[Armor]], reagents = {{name="Bright Linen Bolt",itemID=239700,amount=2},{name="Silverleaf Thread",itemID=251665,amount=3},} },
+  { name = [[Courtly Gloves]], itemID = 239682, skill = 20, source = [[Trainer]], category = [[Armor]], reagents = {{name="Bright Linen Bolt",itemID=239700,amount=2},{name="Silverleaf Thread",itemID=251665,amount=3},} },
+  { name = [[Courtly Pants]], itemID = 239684, skill = 20, source = [[Trainer]], category = [[Armor]], reagents = {{name="Bright Linen Bolt",itemID=239700,amount=3},{name="Silverleaf Thread",itemID=251665,amount=4},{name="Embroidery Floss",itemID=251691,amount=2},} },
+  { name = [[Courtly Belt]], itemID = 239686, skill = 25, source = [[Trainer]], category = [[Armor]], reagents = {{name="Bright Linen Bolt",itemID=239700,amount=2},{name="Silverleaf Thread",itemID=251665,amount=3},} },
+  { name = [[Courtly Slippers]], itemID = 239673, skill = 15, source = [[Trainer]], category = [[Armor]], reagents = {{name="Bright Linen Bolt",itemID=239700,amount=2},{name="Silverleaf Thread",itemID=251665,amount=3},} },
+  { name = [[Courtly Wrists]], itemID = 239690, skill = 25, source = [[Trainer]], category = [[Armor]], reagents = {{name="Bright Linen Bolt",itemID=239700,amount=2},{name="Silverleaf Thread",itemID=251665,amount=3},} },
+  { name = [[Bright Linen Tailoring Robe]], itemID = 239646, skill = 30, source = [[Trainer]], category = [[Profession Gear]], reagents = {{name="Bright Linen Bolt",itemID=239700,amount=4},{name="Silverleaf Thread",itemID=251665,amount=5},{name="Embroidery Floss",itemID=251691,amount=2},} },
+  { name = [[Bright Linen Spellthread]], itemID = 0, skill = 35, source = [[Trainer]], category = [[Spellthread]], reagents = {{name="Imbued Bright Linen Bolt",itemID=239702,amount=2},{name="Eversinging Dust",itemID=243599,amount=2},{name="Embroidery Floss",itemID=251691,amount=3},}, note = [[+Intellect leg enchant]] },
+  { name = [[Arcanoweave Spellthread]], itemID = 0, skill = 60, source = [[Vendor: Caeris Fairdawn (Renown)]], category = [[Spellthread]], reagents = {{name="Arcanoweave Bolt",itemID=239198,amount=2},{name="Mote of Pure Void",itemID=0,amount=1},}, note = [[+Intellect, +max mana]] },
+  { name = [[Sunfire Silk Spellthread]], itemID = 0, skill = 80, source = [[Drop: Fallen-King Salhadaar]], category = [[Spellthread]], reagents = {{name="Sunfire Silk Bolt",itemID=239201,amount=2},}, note = [[+Intellect, +Stamina]] },
+  { name = [[Imbued Bright Linen Backpack]], itemID = 0, skill = 35, source = [[Trainer]], category = [[Bags]], reagents = {{name="Imbued Bright Linen Bolt",itemID=239702,amount=4},{name="Silverleaf Thread",itemID=251665,amount=6},} },
+  { name = [[Bright Linen Reagent Satchel]], itemID = 0, skill = 35, source = [[Trainer]], category = [[Bags]], reagents = {{name="Imbued Bright Linen Bolt",itemID=239702,amount=3},{name="Silverleaf Thread",itemID=251665,amount=4},} },
+  { name = [[Arcanoweave Reagent Rucksack]], itemID = 0, skill = 60, source = [[Trainer]], category = [[Bags]], reagents = {{name="Arcanoweave Bolt",itemID=239198,amount=4},} },
+  { name = [[Elegant Artisan's Cooking Hat]], itemID = 239636, skill = 90, source = [[Vendor (150 Moxie)]], category = [[Profession Gear]], reagents = {{name="Embroidery Floss",itemID=251691,amount=2},{name="Mote of Light",itemID=236949,amount=5},{name="Sunfire Silk Bolt",itemID=239201,amount=8},{name="Radiant Shard",itemID=243603,amount=3},} },
+  { name = [[Elegant Artisan's Enchanting Hat]], itemID = 239637, skill = 90, source = [[Vendor (150 Moxie)]], category = [[Profession Gear]], reagents = {{name="Embroidery Floss",itemID=251691,amount=2},{name="Mote of Wild Magic",itemID=0,amount=5},{name="Arcanoweave Bolt",itemID=239198,amount=8},{name="Radiant Shard",itemID=243603,amount=3},} },
+  { name = [[Elegant Artisan's Fishing Hat]], itemID = 239638, skill = 90, source = [[Vendor (150 Moxie)]], category = [[Profession Gear]], reagents = {{name="Mote of Light",itemID=236949,amount=5},{name="Sunfire Silk Bolt",itemID=239201,amount=8},{name="Radiant Shard",itemID=243603,amount=3},} },
+  { name = [[Elegant Artisan's Herbalism Hat]], itemID = 239640, skill = 90, source = [[Vendor (150 Moxie)]], category = [[Profession Gear]], reagents = {{name="Mote of Light",itemID=236949,amount=5},{name="Sunfire Silk Bolt",itemID=239201,amount=8},{name="Radiant Shard",itemID=243603,amount=3},} },
+  { name = [[Elegant Artisan's Alchemy Coveralls]], itemID = 239641, skill = 90, source = [[Vendor (150 Moxie)]], category = [[Profession Gear]], reagents = {{name="Mote of Light",itemID=236949,amount=5},{name="Sunfire Silk Bolt",itemID=239201,amount=8},{name="Radiant Shard",itemID=243603,amount=3},} },
+  { name = [[Elegant Artisan's Tailoring Robe]], itemID = 239642, skill = 90, source = [[Vendor (150 Moxie)]], category = [[Profession Gear]], reagents = {{name="Mote of Light",itemID=236949,amount=5},{name="Sunfire Silk Bolt",itemID=239201,amount=8},{name="Radiant Shard",itemID=243603,amount=3},} },
+  { name = [[Bright Linen Bandage]], itemID = 0, skill = 1, source = [[Trainer]], category = [[Bandages]], reagents = {{name="Bright Linen",itemID=236963,amount=1},} },
+  { name = [[Snakeskin Lining]], itemID = 270899, skill = 80, source = [[Patch 12.1]], category = [[Embellishments]], reagents = {}, note = [[Optional reagent / embellishment]] },
+}
+

@@ -176,10 +176,33 @@ function addon:BuildLeveling()
         (profData and profData.name or self.selectedLevelingProf) ..
         " Leveling Guide|r")
 
+    -- Skill meter from Artisan's Progress scan (this character)
+    local snap = self.GetProfessionSnapshot and self:GetProfessionSnapshot(self.selectedLevelingProf)
+    local skillCur = snap and snap.skillLevel or 0
+    local skillMax = snap and snap.skillMaxLevel or 0
+    if (skillMax or 0) == 0 and self.IsProfessionLearned and self:IsProfessionLearned(self.selectedLevelingProf) then
+        -- fallback live API if snapshot empty
+        local skillLineID = self.GetLearnedSkillLineID and self:GetLearnedSkillLineID(self.selectedLevelingProf)
+        if skillLineID and GetProfessionInfo then
+            -- skill levels already on snapshot after scan; leave zeros if unknown
+        end
+    end
+    if self.CreateStatusMeter then
+        local skillMeter = self:CreateStatusMeter(leftCol, {
+            width = 220,
+            height = 12,
+            value = skillCur,
+            maxValue = skillMax,
+            r = 0.35, g = 0.85, b = 0.45,
+            emptyText = "Not learned / not scanned",
+        })
+        skillMeter:SetPoint("TOPLEFT", 0, -32)
+    end
+
     -- Row 2: Overview (full width of the LEFT column, with right inset)
     local overview = leftCol:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    overview:SetPoint("TOPLEFT", 0, -40)
-    overview:SetPoint("TOPRIGHT", -10, -40)          -- ← 10px inset from divider
+    overview:SetPoint("TOPLEFT", 0, -54)
+    overview:SetPoint("TOPRIGHT", -10, -54)          -- ← 10px inset from divider
     overview:SetJustifyH("LEFT")
     overview:SetText((profData and profData.overview) or "")
     overview:SetTextColor(0.80, 0.80, 0.80)
@@ -195,7 +218,7 @@ function addon:BuildLeveling()
     end)
 
     local knowledgeBtn = CreateFrame("Button", nil, leftCol, "UIPanelButtonTemplate")
-    knowledgeBtn:SetSize(172, 22)                      -- was 150
+    knowledgeBtn:SetSize(172, 22)
     knowledgeBtn:SetPoint("LEFT", specBtn, "RIGHT", 8, 0)
     knowledgeBtn:SetText("Knowledge & Treasures")
     knowledgeBtn:SetScript("OnClick", function()

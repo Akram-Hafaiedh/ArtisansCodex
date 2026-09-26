@@ -202,6 +202,90 @@ function addon:GetCharacterSnapshot(guid)
 end
 
 --- Whether this character should appear on the Progress panel.
+
+--- Snapshot for one profession on a character (defaults to current player).
+function addon:GetProfessionSnapshot(profName, guid)
+    if not profName then return nil end
+    local char = self:GetCharacterSnapshot(guid)
+    if not char or type(char.professions) ~= "table" then return nil end
+    return char.professions[profName]
+end
+
+--- Compact status bar used by Knowledge / Leveling (and future tabs).
+--- opts: width, height, value, maxValue, label, r,g,b  (optional unspent for knowledge)
+function addon:CreateStatusMeter(parent, opts)
+    opts = opts or {}
+    local width = opts.width or 200
+    local height = opts.height or 16
+    local value = tonumber(opts.value) or 0
+    local maxValue = tonumber(opts.maxValue) or 0
+    local r = opts.r or 0.85
+    local g = opts.g or 0.70
+    local b = opts.b or 0.20
+
+    local f = CreateFrame("Frame", nil, parent)
+    f:SetSize(width, height + (opts.label and 14 or 0))
+
+    local yOff = 0
+    if opts.label then
+        local lab = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        lab:SetPoint("TOPLEFT", 0, 0)
+        lab:SetText(opts.label)
+        lab:SetTextColor(0.75, 0.75, 0.75)
+        f.label = lab
+        yOff = -14
+    end
+
+    local track = CreateFrame("Frame", nil, f, "BackdropTemplate")
+    track:SetPoint("TOPLEFT", 0, yOff)
+    track:SetSize(width, height)
+    track:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    })
+    track:SetBackdropColor(0.08, 0.08, 0.10, 0.95)
+    track:SetBackdropBorderColor(0.35, 0.32, 0.22, 0.8)
+    f.track = track
+
+    local fill = track:CreateTexture(nil, "ARTWORK")
+    fill:SetPoint("TOPLEFT", 1, -1)
+    fill:SetPoint("BOTTOMLEFT", 1, 1)
+    fill:SetColorTexture(r, g, b, 0.85)
+    f.fill = fill
+
+    local text = track:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    text:SetPoint("CENTER")
+    text:SetJustifyH("CENTER")
+    f.text = text
+
+    function f:SetValues(val, maxV, extra)
+        val = tonumber(val) or 0
+        maxV = tonumber(maxV) or 0
+        local ratio = 0
+        if maxV > 0 then
+            ratio = math.min(1, math.max(0, val / maxV))
+        end
+        local innerW = math.max(0, width - 2)
+        fill:SetWidth(math.max(1, innerW * ratio))
+        if maxV > 0 then
+            if extra and extra > 0 then
+                text:SetText(string.format("%d(+%d) / %d", val, extra, maxV))
+            else
+                text:SetText(string.format("%d / %d", val, maxV))
+            end
+            text:SetTextColor(0.95, 0.95, 0.9)
+        else
+            text:SetText(opts.emptyText or "—")
+            text:SetTextColor(0.5, 0.5, 0.5)
+            fill:SetWidth(1)
+        end
+    end
+
+    f:SetValues(value, maxValue, opts.unspent)
+    return f
+end
+
 function addon:IsCharacterTracked(guid)
     local progress = self:EnsureProgressDB()
     if progress.tracked[guid] == false then
@@ -895,6 +979,26 @@ function addon:CreateMainFrame()
     -- Close button
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", -4, -4)
+
+    -- Artisan's Progress (account heatmap) — related to all profession tabs
+    local progressBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    progressBtn:SetSize(130, 22)
+    progressBtn:SetPoint("TOPRIGHT", close, "TOPLEFT", -6, -6)
+    progressBtn:SetText("Artisan's Progress")
+    progressBtn:SetScript("OnClick", function()
+        if private.Progress and private.Progress.Toggle then
+            private.Progress:Toggle()
+        end
+    end)
+    progressBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:AddLine("Artisan's Progress", 1, 0.85, 0.2)
+        GameTooltip:AddLine("Account-wide profession heatmap for all characters.", 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine("Data from this scan also feeds meters on Leveling & Knowledge.", 0.65, 0.65, 0.65, true)
+        GameTooltip:Show()
+    end)
+    progressBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    frame.progressBtn = progressBtn
 
     -- ============================================================
     -- TAB BUTTONS

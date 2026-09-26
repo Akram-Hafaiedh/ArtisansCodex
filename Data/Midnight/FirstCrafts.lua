@@ -718,3 +718,4 @@ for profName, list in pairs(private.FirstCrafts.byProfession) do
         end
     end
 end
+
