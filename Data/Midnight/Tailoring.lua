@@ -377,13 +377,12 @@ private.Data.Tailoring = {
         {
             id = "renown_book",
             name = "Skill Issue: Tailoring",
+            itemID = 257601,
             kp = 10,
             kind = "renown_book",
-            itemID = 257601,
             note = "Sold by Caeris Fairdawn in Eversong Woods for 75 Artisan Tailor's Moxie. Requires Renown 6 with Silvermoon Court.",
             vendor = "Caeris Fairdawn",
             zone = "Eversong Woods",
-            -- pin optional when we have coords; leave nil for now
         },
     },
 
@@ -491,7 +490,7 @@ private.Data.Tailoring = {
             name = "Patron Crafting Orders",
             kp = "~12",
             itemID = 246335,
-            note = "Main weekly source. Some orders award Glimmer of Midnight Tailoring Knowledge. Not every order gives KP — recipe and quality matter.",
+            note = "Main weekly source. Some orders award Glimmer of Midnight Tailoring Knowledge. Not every order gives KP.",
         },
         {
             name = "Weekly Quest (Trainer)",
@@ -504,18 +503,18 @@ private.Data.Tailoring = {
             name = "Weekly Zone Drops",
             kp = 4,
             itemIDs = { 259202, 259203 },
-            note = "Loot 1× Embroidered Memento and 1× Finely Woven Lynx Collar from zone treasures each week (2 KP each).",
+            note = "Embroidered Memento + Finely Woven Lynx Collar from zone treasures (2 KP each).",
         },
         {
             name = "Thalassian Treatise on Tailoring",
             kp = 1,
             itemID = 245756,
-            note = "BoP from Inscription. Public Crafting Order, or craft on an Inscription alt (Warbound).",
+            note = "BoP from Inscription. Public Crafting Order, or craft on an Inscription alt.",
         },
         {
             name = "Darkmoon Faire",
             kp = 3,
-            note = "Monthly profession quest: +3 Knowledge and +2 Skill. Starts the Sunday before the first Monday of the month.",
+            note = "Monthly profession quest: +3 Knowledge and +2 Skill.",
         },
     },
 

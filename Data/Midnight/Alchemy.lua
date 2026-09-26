@@ -250,6 +250,7 @@ private.Data.Alchemy = {
         {
             id = "renown_book",
             name = "Beyond the Event Horizon: Alchemy",
+            itemID = 262645,
             kp = 10,
             kind = "renown_book",
             note = "Sold by Void Researcher Anomander in Voidstorm for 75 Artisan Alchemist's Moxie. Requires Renown 9 with The Singularity.",
@@ -276,6 +277,7 @@ private.Data.Alchemy = {
         {
             id = "pristine_potion",
             name = "Pristine Potion",
+            itemID = 238538,
             zone = "Silvermoon City",
             mapID = 2393,
             x = 47.8,
@@ -287,6 +289,7 @@ private.Data.Alchemy = {
         {
             id = "vial_eversong",
             name = "Vial of Eversong Oddities",
+            itemID = 238532,
             zone = "Silvermoon City",
             mapID = 2393,
             x = 45.1,
@@ -298,6 +301,7 @@ private.Data.Alchemy = {
         {
             id = "freshly_plucked",
             name = "Freshly Plucked Peacebloom",
+            itemID = 238536,
             zone = "Silvermoon City",
             mapID = 2393,
             x = 49.1,
@@ -309,6 +313,7 @@ private.Data.Alchemy = {
         {
             id = "vial_zulaman",
             name = "Vial of Zul'Aman Oddities",
+            itemID = 238535,
             zone = "Zul'Aman",
             mapID = 2437,
             x = 40.4,
@@ -320,6 +325,7 @@ private.Data.Alchemy = {
         {
             id = "measured_ladle",
             name = "Measured Ladle",
+            itemID = 238537,
             zone = "Zul'Aman (Atal'Aman)",
             mapID = 2536,
             x = 49.1,
@@ -331,6 +337,7 @@ private.Data.Alchemy = {
         {
             id = "vial_rootlands",
             name = "Vial of Rootlands Oddities",
+            itemID = 238534,
             zone = "Harandar",
             mapID = 2413,
             x = 34.8,
@@ -342,6 +349,7 @@ private.Data.Alchemy = {
         {
             id = "failed_experiment",
             name = "Failed Experiment",
+            itemID = 238539,
             zone = "Voidstorm",
             mapID = 2405,
             x = 32.8,
@@ -353,6 +361,7 @@ private.Data.Alchemy = {
         {
             id = "vial_voidstorm",
             name = "Vial of Voidstorm Oddities",
+            itemID = 238533,
             zone = "Voidstorm (Slayer's Rise)",
             mapID = 2444,
             x = 41.9,
@@ -367,11 +376,35 @@ private.Data.Alchemy = {
     -- WEEKLY KNOWLEDGE
     -- =========================================================
     weekly = {
-        { name = "Patron Crafting Orders", kp = "~12", note = "Main source. Not all orders give knowledge." },
-        { name = "Weekly Quest (Trainer)", kp = 1, note = "Complete 3 Crafting Orders. Unlocked after Crafters Needed questline." },
-        { name = "Weekly Drops", kp = 4, note = "Lightbloomed Spore Sample + Aged Cruor (1 of each per week from treasures)." },
-        { name = "Thalassian Treatise on Alchemy", kp = 1, note = "Crafted by Inscription (BoP). Can be ordered via Public Orders." },
-        { name = "Darkmoon Faire", kp = 3, note = "Once per month. +3 Knowledge and +2 Skill." },
+        {
+            name = "Patron Crafting Orders",
+            kp = "~12",
+            itemID = 246321,
+            note = "Main weekly source. Some orders award Glimmer of Midnight Alchemy Knowledge.",
+        },
+        {
+            name = "Weekly Quest (Trainer)",
+            kp = 1,
+            itemID = 263454,
+            note = "Complete 3 Crafting Orders for a Thalassian Alchemist's Notebook. Unlocked after Crafters Needed.",
+        },
+        {
+            name = "Weekly Zone Drops",
+            kp = 4,
+            itemIDs = { 259188, 259189 },
+            note = "Lightbloomed Spore Sample + Aged Cruor (1 of each per week from treasures).",
+        },
+        {
+            name = "Thalassian Treatise on Alchemy",
+            kp = 1,
+            itemID = 245755,
+            note = "BoP from Inscription. Public Crafting Order, or craft on an Inscription alt.",
+        },
+        {
+            name = "Darkmoon Faire",
+            kp = 3,
+            note = "Monthly profession quest: +3 Knowledge and +2 Skill.",
+        },
     },
 
     -- =========================================================

@@ -97,10 +97,50 @@ private.Data.Herbalism = {
     -- =========================================================
     -- KNOWLEDGE TREASURES
     -- =========================================================
+    oneTime = {
+        {
+            id = "renown_book",
+            name = "Traditions of the Haranir: Herbalism",
+            itemID = 258410,
+            kp = 10,
+            kind = "renown_book",
+            note = "Sold by Naynar in Harandar for 75 Artisan Herbalist's Moxie. Requires Renown 6 with Hara'ti.",
+            vendor = "Naynar",
+            zone = "Harandar",
+        },
+    },
+
+    weekly = {
+        {
+            name = "Trainer Quest",
+            kp = 3,
+            itemID = 263462,
+            note = "Weekly quest from the Herbalism trainer. Rewards Thalassian Herbalist's Notes.",
+        },
+        {
+            name = "Gathering Drops",
+            kp = "~9",
+            itemIDs = { 238467, 238466 },
+            note = "Thalassian Phoenix Ember (1 KP, up to 5/week) then Thalassian Phoenix Tail while herbing.",
+        },
+        {
+            name = "Thalassian Treatise on Herbalism",
+            kp = 1,
+            itemID = 245761,
+            note = "BoP from Inscription. Public Crafting Order, or craft on an Inscription alt.",
+        },
+        {
+            name = "Darkmoon Faire",
+            kp = 3,
+            note = "Monthly profession quest: +3 Knowledge and +2 Skill.",
+        },
+    },
+
     treasures = {
         {
             id = "simple_leaf_pruners",
             name = "Simple Leaf Pruners",
+            itemID = 238470,
             zone = "Silvermoon City",
             mapID = 2393,
             x = 49.0,
@@ -112,6 +152,7 @@ private.Data.Herbalism = {
         {
             id = "a_spade",
             name = "A Spade",
+            itemID = 238472,
             zone = "Eversong Woods",
             mapID = 2395,
             x = 64.2,
@@ -123,6 +164,7 @@ private.Data.Herbalism = {
         {
             id = "sweeping_harvesters_scythe",
             name = "Sweeping Harvester's Scythe",
+            itemID = 238469,
             zone = "Zul'Aman",
             mapID = 2437,
             x = 41.9,
@@ -134,6 +176,7 @@ private.Data.Herbalism = {
         {
             id = "peculiar_lotus",
             name = "Peculiar Lotus",
+            itemID = 238474,
             zone = "Voidstorm",
             mapID = 2405,
             x = 34.7,
@@ -145,6 +188,7 @@ private.Data.Herbalism = {
         {
             id = "planting_shovel",
             name = "Planting Shovel",
+            itemID = 238475,
             zone = "Harandar",
             mapID = 2413,
             x = 51.1,
@@ -156,6 +200,7 @@ private.Data.Herbalism = {
         {
             id = "bloomed_bud",
             name = "Bloomed Bud",
+            itemID = 238468,
             zone = "Harandar",
             mapID = 2413,
             x = 38.3,
@@ -167,6 +212,7 @@ private.Data.Herbalism = {
         {
             id = "lightbloom_root",
             name = "Lightbloom Root",
+            itemID = 238471,
             zone = "Harandar",
             mapID = 2413,
             x = 36.6,
@@ -178,6 +224,7 @@ private.Data.Herbalism = {
         {
             id = "harvesters_sickle",
             name = "Harvester's Sickle",
+            itemID = 238473,
             zone = "Harandar",
             mapID = 2413,
             x = 76.1,

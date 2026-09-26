@@ -85,20 +85,44 @@ local function GetItemQualityRGB(itemID)
     return 1, 1, 1
 end
 
+local function ApplyQualityColor(fs, itemID, dimmed)
+    local r, g, b = GetItemQualityRGB(itemID)
+    if dimmed then
+        fs:SetTextColor(r * 0.55, g * 0.55, b * 0.55)
+    else
+        fs:SetTextColor(r, g, b)
+    end
+end
+
 local function SetItemNameFontString(fs, name, itemID, dimmed)
     fs:SetText(name or "?")
-    if dimmed then
-        fs:SetTextColor(0.55, 0.55, 0.55)
+    if not itemID then
+        fs:SetTextColor(1, 1, 1)
         return
     end
-    local r, g, b = GetItemQualityRGB(itemID)
-    fs:SetTextColor(r, g, b)
+    -- Request item data; quality is often nil on first open until cached
+    if C_Item and C_Item.RequestLoadItemDataByID then
+        C_Item.RequestLoadItemDataByID(itemID)
+    end
+    ApplyQualityColor(fs, itemID, dimmed)
+    -- When client finishes loading the item, recolor (fixes white names until tab switch)
+    if Item and Item.CreateFromItemID then
+        local item = Item:CreateFromItemID(itemID)
+        if item and item.ContinueOnItemLoad then
+            item:ContinueOnItemLoad(function()
+                if fs and fs.SetTextColor then
+                    ApplyQualityColor(fs, itemID, dimmed)
+                end
+            end)
+        end
+    end
 end
 
 -- Pure item tooltip (do not mix with AddLine — that breaks layout)
 local function ShowItemTooltip(owner, itemID)
     if not itemID then return end
-    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+    -- Anchor close to the hovered frame (icon/name area), not far across the UI
+    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT", 6, 0)
     GameTooltip:SetItemByID(itemID)
     GameTooltip:Show()
 end
@@ -378,14 +402,6 @@ function addon:BuildKnowledge()
         icon:SetPoint("LEFT", 10, 0)
         icon:SetTexture(ItemIconTexture(o.itemID))
 
-        if o.itemID then
-            row:EnableMouse(true)
-            row:SetScript("OnEnter", function(self)
-                ShowItemTooltip(self, o.itemID)
-            end)
-            row:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        end
-
         local nameFS = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         nameFS:SetPoint("TOPLEFT", 48, -8)
         SetItemNameFontString(nameFS, o.name or "One-time source", o.itemID, false)
@@ -401,6 +417,19 @@ function addon:BuildKnowledge()
         kpFS:SetPoint("RIGHT", -12, 0)
         kpFS:SetText("+" .. tostring(o.kp or "?") .. " KP")
         kpFS:SetTextColor(1, 0.9, 0.5)
+
+        -- Tight hit area over icon + name so tooltip sits next to the item
+        if o.itemID then
+            local hit = CreateFrame("Frame", nil, row)
+            hit:SetPoint("TOPLEFT", icon, "TOPLEFT", -4, 4)
+            hit:SetPoint("BOTTOMLEFT", icon, "BOTTOMLEFT", -4, -4)
+            hit:SetPoint("RIGHT", nameFS, "RIGHT", 12, 0)
+            hit:EnableMouse(true)
+            hit:SetScript("OnEnter", function(self)
+                ShowItemTooltip(self, o.itemID)
+            end)
+            hit:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        end
     end
 
     -- Treasures actions
@@ -498,12 +527,17 @@ function addon:BuildKnowledge()
                     pinBtn:SetScript("OnClick", function() PinTreasure(treasure) end)
                 end
 
-                row:EnableMouse(true)
-                row:SetScript("OnEnter", function(selfRow)
+                -- Tight hit area over icon + name so tooltip sits next to the item
+                local hit = CreateFrame("Frame", nil, row)
+                hit:SetPoint("TOPLEFT", icon, "TOPLEFT", -4, 4)
+                hit:SetPoint("BOTTOMLEFT", icon, "BOTTOMLEFT", -4, -4)
+                hit:SetPoint("RIGHT", nameFS, "RIGHT", 12, 0)
+                hit:EnableMouse(true)
+                hit:SetScript("OnEnter", function(self)
                     if treasure.itemID then
-                        ShowItemTooltip(selfRow, treasure.itemID)
+                        ShowItemTooltip(self, treasure.itemID)
                     else
-                        GameTooltip:SetOwner(selfRow, "ANCHOR_RIGHT")
+                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT", 6, 0)
                         GameTooltip:AddLine(treasure.name or "?", 1, 0.85, 0.2)
                         if treasure.description then
                             GameTooltip:AddLine(treasure.description, 0.9, 0.9, 0.9, true)
@@ -511,7 +545,7 @@ function addon:BuildKnowledge()
                         GameTooltip:Show()
                     end
                 end)
-                row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+                hit:SetScript("OnLeave", function() GameTooltip:Hide() end)
             end
             y = y - 4
         end
@@ -529,11 +563,13 @@ function addon:BuildKnowledge()
 
         local iconIDs = src.itemIDs or (src.itemID and { src.itemID }) or {}
         local iconX = 10
+        local firstIcon = nil
         if #iconIDs == 0 then
             local icon = row:CreateTexture(nil, "ARTWORK")
             icon:SetSize(26, 26)
             icon:SetPoint("LEFT", iconX, 0)
             icon:SetTexture("Interface\\Icons\\INV_Misc_Book_09")
+            firstIcon = icon
             iconX = iconX + 32
         else
             for _, id in ipairs(iconIDs) do
@@ -541,16 +577,10 @@ function addon:BuildKnowledge()
                 icon:SetSize(26, 26)
                 icon:SetPoint("LEFT", iconX, 0)
                 icon:SetTexture(ItemIconTexture(id))
+                if not firstIcon then firstIcon = icon end
                 iconX = iconX + 30
             end
             iconX = iconX + 4
-            -- tooltip on row for first item
-            local firstID = iconIDs[1]
-            row:EnableMouse(true)
-            row:SetScript("OnEnter", function(self)
-                ShowItemTooltip(self, firstID)
-            end)
-            row:SetScript("OnLeave", function() GameTooltip:Hide() end)
         end
 
         local nameFS = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -559,7 +589,15 @@ function addon:BuildKnowledge()
         if src.unlockQuestID and not IsQuestDone(src.unlockQuestID) then
             nameText = nameText .. "  |cffff8844(locked)|r"
         end
-        nameFS:SetText(nameText)
+        local primaryID = iconIDs[1]
+        if primaryID then
+            SetItemNameFontString(nameFS, nameText, primaryID, false)
+            if src.unlockQuestID and not IsQuestDone(src.unlockQuestID) then
+                nameFS:SetText(nameText)
+            end
+        else
+            nameFS:SetText(nameText)
+        end
 
         local noteFS = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         noteFS:SetPoint("TOPLEFT", iconX, -24)
@@ -578,6 +616,19 @@ function addon:BuildKnowledge()
         end
         kpFS:SetText(kpLabel)
         kpFS:SetTextColor(1, 0.9, 0.5)
+
+        -- Tight hit area over icons + name so tooltip sits next to the item
+        if primaryID and firstIcon then
+            local hit = CreateFrame("Frame", nil, row)
+            hit:SetPoint("TOPLEFT", firstIcon, "TOPLEFT", -4, 4)
+            hit:SetPoint("BOTTOMLEFT", firstIcon, "BOTTOMLEFT", -4, -4)
+            hit:SetPoint("RIGHT", nameFS, "RIGHT", 12, 0)
+            hit:EnableMouse(true)
+            hit:SetScript("OnEnter", function(self)
+                ShowItemTooltip(self, primaryID)
+            end)
+            hit:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        end
     end
 
     if catchUp and catchUp ~= "" then
