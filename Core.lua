@@ -42,6 +42,10 @@ local defaults = {
         },
         weeklyReset = 0, -- GetServerTime() of next weekly reset after last clear
     },
+
+    -- Per-character learned recipe scans (filled automatically when profession opens)
+    -- learnedRecipes[playerGUID][profName] = { bySpell={}, byItem={}, byName={}, scannedAt= }
+    learnedRecipes = {},
 }
 
 -- Simple function to copy default settings
@@ -844,6 +848,7 @@ function addon:OnInitialize()
         private.Specializations,
         private.Knowledge,
         private.Progress,
+        private.Recipes,
     }) do
         if mod and mod.Initialize then
             mod:Initialize()

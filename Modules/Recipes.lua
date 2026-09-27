@@ -9,46 +9,279 @@ local addon = private.addon
 
 local FILTERS = { "All", "Learned", "Missing" }
 
-function Recipes:Initialize()
-    private:Print("Recipes module loaded")
-end
-
 local function GetRecipeList(profName)
     local data = private.RecipeData and private.RecipeData[profName]
     if type(data) ~= "table" then return {} end
     return data
 end
 
-local function IsRecipeLearned(entry)
-    if not entry then return false end
-    -- Prefer first-craft catalog / cached flags
-    if entry.spellID and C_TradeSkillUI and C_TradeSkillUI.IsRecipeFirstCraft then
-        -- If first-craft API returns non-nil for this spell, recipe data is loaded
-        local ok, stillFirst = pcall(C_TradeSkillUI.IsRecipeFirstCraft, entry.spellID)
-        if ok and stillFirst ~= nil then
-            return true -- known to the client (whether or not first-craft remains)
+-- ============================================================
+-- Learned tracking (persisted to ArtisansCodexDB)
+-- Scans automatically whenever the profession window opens / updates.
+-- Status stays available after the window is closed and across reloads.
+-- ============================================================
+
+-- Session cache (filled by ScanOpenProfession)
+local learnedCacheBySpell = {}
+local learnedCacheByItem = {}
+local learnedCacheByName = {}
+local learnedCacheReady = false
+local learnedCacheProfName = nil
+
+local function GetPlayerGUID()
+    return UnitGUID and UnitGUID("player") or "unknown"
+end
+
+-- SavedVariables: db.learnedRecipes[guid][profName] = {
+--   bySpell = { [spellID] = true/false },
+--   byItem  = { [itemID]  = true/false },
+--   byName  = { [lowerName] = true/false },
+--   scannedAt = unix time,
+-- }
+local function GetPersistedProf(profName)
+    if not addon or not addon.db or not profName then return nil end
+    local db = addon.db
+    db.learnedRecipes = db.learnedRecipes or {}
+    local guid = GetPlayerGUID()
+    db.learnedRecipes[guid] = db.learnedRecipes[guid] or {}
+    local slot = db.learnedRecipes[guid][profName]
+    if type(slot) ~= "table" then
+        slot = { bySpell = {}, byItem = {}, byName = {}, scannedAt = 0 }
+        db.learnedRecipes[guid][profName] = slot
+    end
+    slot.bySpell = slot.bySpell or {}
+    slot.byItem = slot.byItem or {}
+    slot.byName = slot.byName or {}
+    return slot
+end
+
+local function NormalizeProfName(name)
+    if type(name) ~= "string" or name == "" then return nil end
+    -- "Midnight Tailoring" / "Kul Tiran Tailoring" → "Tailoring"
+    local bare = name:match("Midnight%s+(.+)$")
+        or name:match("Khaz Algar%s+(.+)$")
+        or name:match("Dragon Isles%s+(.+)$")
+        or name:match("^%S+%s+(.+)$")
+        or name
+    return bare
+end
+
+local function GetOpenProfessionName()
+    if not C_TradeSkillUI then return nil end
+    if C_TradeSkillUI.GetBaseProfessionInfo then
+        local ok, info = pcall(C_TradeSkillUI.GetBaseProfessionInfo)
+        if ok and type(info) == "table" then
+            local name = info.parentProfessionName or info.professionName
+            return NormalizeProfName(name)
         end
     end
-    -- Fallback: item known / profession open with matching recipe name is hard without full IDs
-    if entry.itemID and entry.itemID > 0 and C_TradeSkillUI and C_TradeSkillUI.GetAllRecipeIDs then
-        local ids = C_TradeSkillUI.GetAllRecipeIDs()
-        if type(ids) == "table" then
-            for _, rid in ipairs(ids) do
-                local info = C_TradeSkillUI.GetRecipeInfo and C_TradeSkillUI.GetRecipeInfo(rid)
-                if info and info.name and entry.name and info.name == entry.name then
-                    return true
+    return nil
+end
+
+-- Scan the currently open profession and persist results
+local function ScanOpenProfession()
+    wipe(learnedCacheBySpell)
+    wipe(learnedCacheByItem)
+    wipe(learnedCacheByName)
+    learnedCacheReady = false
+    learnedCacheProfName = nil
+
+    if not (C_TradeSkillUI and C_TradeSkillUI.GetAllRecipeIDs and C_TradeSkillUI.GetRecipeInfo) then
+        return false
+    end
+
+    local prevLearned, prevUnlearned
+    if C_TradeSkillUI.GetShowLearned then
+        prevLearned = C_TradeSkillUI.GetShowLearned()
+        prevUnlearned = C_TradeSkillUI.GetShowUnlearned and C_TradeSkillUI.GetShowUnlearned()
+    end
+    if C_TradeSkillUI.SetShowLearned then
+        pcall(C_TradeSkillUI.SetShowLearned, true)
+    end
+    if C_TradeSkillUI.SetShowUnlearned then
+        pcall(C_TradeSkillUI.SetShowUnlearned, true)
+    end
+
+    local ids = C_TradeSkillUI.GetAllRecipeIDs()
+    local restore = function()
+        if prevLearned ~= nil and C_TradeSkillUI.SetShowLearned then
+            pcall(C_TradeSkillUI.SetShowLearned, prevLearned)
+        end
+        if prevUnlearned ~= nil and C_TradeSkillUI.SetShowUnlearned then
+            pcall(C_TradeSkillUI.SetShowUnlearned, prevUnlearned)
+        end
+    end
+
+    if type(ids) ~= "table" or #ids == 0 then
+        restore()
+        return false
+    end
+
+    local profName = GetOpenProfessionName()
+    local persist = profName and GetPersistedProf(profName) or nil
+    if persist then
+        wipe(persist.bySpell)
+        wipe(persist.byItem)
+        wipe(persist.byName)
+    end
+
+    local count = 0
+    for _, rid in ipairs(ids) do
+        local info = C_TradeSkillUI.GetRecipeInfo(rid)
+        if info and info.name then
+            local isLearned = info.learned == true
+            learnedCacheBySpell[rid] = isLearned
+            learnedCacheByName[strlower(info.name)] = isLearned
+            if persist then
+                persist.bySpell[rid] = isLearned
+                persist.byName[strlower(info.name)] = isLearned
+            end
+
+            local schematic = C_TradeSkillUI.GetRecipeSchematic and C_TradeSkillUI.GetRecipeSchematic(rid, false)
+            local outID = schematic and schematic.outputItemID
+            if outID and outID > 0 then
+                learnedCacheByItem[outID] = isLearned
+                if persist then
+                    persist.byItem[outID] = isLearned
                 end
             end
+            count = count + 1
         end
     end
-    return false
+
+    restore()
+
+    if persist then
+        persist.scannedAt = (GetServerTime and GetServerTime()) or time()
+    end
+
+    learnedCacheProfName = profName
+    learnedCacheReady = count > 0
+    return learnedCacheReady
+end
+
+-- true / false / nil (never scanned for this profession)
+local function IsRecipeLearned(entry, viewingProf)
+    if not entry then return nil end
+
+    -- 1) Live API (works while that profession is open)
+    if entry.spellID and C_TradeSkillUI and C_TradeSkillUI.GetRecipeInfo then
+        local ok, info = pcall(C_TradeSkillUI.GetRecipeInfo, entry.spellID)
+        if ok and info and info.learned ~= nil then
+            return info.learned and true or false
+        end
+    end
+
+    -- 2) Session cache from last scan of matching profession
+    if learnedCacheReady and learnedCacheProfName and viewingProf
+        and strlower(learnedCacheProfName) == strlower(viewingProf) then
+        if entry.spellID and learnedCacheBySpell[entry.spellID] ~= nil then
+            return learnedCacheBySpell[entry.spellID]
+        end
+        if entry.itemID and entry.itemID > 0 and learnedCacheByItem[entry.itemID] ~= nil then
+            return learnedCacheByItem[entry.itemID]
+        end
+        if entry.name and learnedCacheByName[strlower(entry.name)] ~= nil then
+            return learnedCacheByName[strlower(entry.name)]
+        end
+        if entry.itemID and entry.itemID > 0 then
+            local liveName = C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(entry.itemID)
+            if liveName and learnedCacheByName[strlower(liveName)] ~= nil then
+                return learnedCacheByName[strlower(liveName)]
+            end
+        end
+        -- Profession was scanned; recipe not in list → missing
+        return false
+    end
+
+    -- 3) Persisted SavedVariables from a previous scan of this profession
+    if viewingProf then
+        local persist = GetPersistedProf(viewingProf)
+        if persist and persist.scannedAt and persist.scannedAt > 0 then
+            if entry.spellID and persist.bySpell[entry.spellID] ~= nil then
+                return persist.bySpell[entry.spellID]
+            end
+            if entry.itemID and entry.itemID > 0 and persist.byItem[entry.itemID] ~= nil then
+                return persist.byItem[entry.itemID]
+            end
+            if entry.name and persist.byName[strlower(entry.name)] ~= nil then
+                return persist.byName[strlower(entry.name)]
+            end
+            if entry.itemID and entry.itemID > 0 then
+                local liveName = C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(entry.itemID)
+                if liveName and persist.byName[strlower(liveName)] ~= nil then
+                    return persist.byName[strlower(liveName)]
+                end
+            end
+            -- Scanned before; not found → missing
+            return false
+        end
+    end
+
+    -- 4) Never scanned this profession on this character
+    return nil
 end
 
 local function RecipeMatchesFilter(entry, filter, learned)
     if filter == "All" then return true end
-    if filter == "Learned" then return learned end
-    if filter == "Missing" then return not learned end
+    if filter == "Learned" then return learned == true end
+    if filter == "Missing" then return learned == false end
     return true
+end
+
+local function HasPersistedScan(profName)
+    local persist = GetPersistedProf(profName)
+    return persist and persist.scannedAt and persist.scannedAt > 0
+end
+
+-- Auto-scan when profession UI opens / updates / a recipe is learned
+local scanPending = false
+local function ScheduleProfessionScan()
+    if scanPending then return end
+    scanPending = true
+    C_Timer.After(0.4, function()
+        scanPending = false
+        local ok = ScanOpenProfession()
+        if ok and addon and addon.mainFrame and addon.mainFrame:IsShown() then
+            -- Refresh recipes tab if visible so status updates live
+            local tab = addon.mainFrame.tabContents and addon.mainFrame.tabContents["recipes"]
+            if tab and tab:IsShown() and type(addon.BuildRecipes) == "function" then
+                addon:BuildRecipes()
+            end
+        end
+    end)
+end
+
+function Recipes:Initialize()
+    private:Print("Recipes module loaded")
+
+    local ef = CreateFrame("Frame")
+    local events = {
+        "TRADE_SKILL_SHOW",
+        "TRADE_SKILL_LIST_UPDATE",
+        "TRADE_SKILL_DETAILS_UPDATE",
+        "NEW_RECIPE_LEARNED",
+    }
+    for _, e in ipairs(events) do
+        pcall(function() ef:RegisterEvent(e) end)
+    end
+    ef:SetScript("OnEvent", function(_, event, ...)
+        if event == "NEW_RECIPE_LEARNED" then
+            -- Mark the specific recipe learned immediately in session + DB if we know the prof
+            local spellID = ...
+            if type(spellID) == "number" and spellID > 0 then
+                learnedCacheBySpell[spellID] = true
+                local prof = learnedCacheProfName or GetOpenProfessionName()
+                if prof then
+                    local persist = GetPersistedProf(prof)
+                    if persist then
+                        persist.bySpell[spellID] = true
+                    end
+                end
+            end
+        end
+        ScheduleProfessionScan()
+    end)
 end
 
 local function RecipeMatchesSearch(entry, q)
@@ -68,6 +301,13 @@ end
 function addon:BuildRecipes()
     local page = self.mainFrame and self.mainFrame.tabContents and self.mainFrame.tabContents["recipes"]
     if not page then return end
+
+    -- If the matching profession is currently open, rescan so status is fresh
+    local openProf = GetOpenProfessionName()
+    if openProf and self.selectedRecipesProf
+        and strlower(openProf) == strlower(self.selectedRecipesProf) then
+        ScanOpenProfession()
+    end
 
     if type(self.ClearPage) == "function" then
         self:ClearPage(page)
@@ -110,21 +350,57 @@ function addon:BuildRecipes()
     local sub = header:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     sub:SetPoint("TOPLEFT", 14, -30)
     sub:SetTextColor(0.65, 0.65, 0.65)
-    sub:SetText("Data: wow-professions.com · wowhead.com  ·  Open profession to refresh Learned")
+    sub:SetText("Data: wow-professions.com · wowhead.com")
 
-    -- Search box
+    -- Search box (debounced live filter, ~300ms after typing stops)
     local search = CreateFrame("EditBox", nil, header, "InputBoxTemplate")
     search:SetSize(180, 20)
     search:SetPoint("TOPRIGHT", -14, -12)
     search:SetAutoFocus(false)
     search:SetText(self.recipesSearch or "")
-    search:SetScript("OnEnterPressed", function(box)
-        self.recipesSearch = box:GetText() or ""
+    local searchTimer
+    local function ApplySearch(box)
+        local text = box:GetText() or ""
+        if text == (self.recipesSearch or "") then return end
+        self.recipesSearch = text
         self:BuildRecipes()
+        -- Restore focus after rebuild (frame is recreated)
+        C_Timer.After(0.05, function()
+            if self.recipesSearchBox and self.recipesSearchBox:IsShown() then
+                self.recipesSearchBox:SetFocus()
+                self.recipesSearchBox:SetCursorPosition(#(self.recipesSearch or ""))
+            end
+        end)
+    end
+    search:SetScript("OnTextChanged", function(box, userInput)
+        if not userInput then return end
+        if searchTimer then
+            searchTimer:Cancel()
+            searchTimer = nil
+        end
+        searchTimer = C_Timer.NewTimer(0.3, function()
+            searchTimer = nil
+            ApplySearch(box)
+        end)
     end)
-    search:SetScript("OnEscapePressed", function(box)
+    search:SetScript("OnEnterPressed", function(box)
+        if searchTimer then
+            searchTimer:Cancel()
+            searchTimer = nil
+        end
+        ApplySearch(box)
         box:ClearFocus()
     end)
+    search:SetScript("OnEscapePressed", function(box)
+        box:SetText("")
+        if searchTimer then
+            searchTimer:Cancel()
+            searchTimer = nil
+        end
+        ApplySearch(box)
+        box:ClearFocus()
+    end)
+    self.recipesSearchBox = search
     local searchLabel = header:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     searchLabel:SetPoint("RIGHT", search, "LEFT", -6, 0)
     searchLabel:SetText("Search")
@@ -172,7 +448,7 @@ function addon:BuildRecipes()
     local all = GetRecipeList(profName)
     local rows = {}
     for _, entry in ipairs(all) do
-        local learned = IsRecipeLearned(entry)
+        local learned = IsRecipeLearned(entry, profName)
         if RecipeMatchesFilter(entry, self.recipesFilter, learned)
             and RecipeMatchesSearch(entry, self.recipesSearch) then
             rows[#rows + 1] = { entry = entry, learned = learned }
@@ -238,47 +514,118 @@ function addon:BuildRecipes()
         icon:SetPoint("LEFT", 8, 0)
         if entry.itemID and entry.itemID > 0 then
             icon:SetTexture(addon:GetItemIcon(entry.itemID))
+        elseif entry.spellID and entry.spellID > 0 then
+            -- Enchant/spell recipes: use the spell's own icon (varies per enchant)
+            local tex
+            if C_Spell and C_Spell.GetSpellTexture then
+                tex = C_Spell.GetSpellTexture(entry.spellID)
+            elseif GetSpellTexture then
+                tex = GetSpellTexture(entry.spellID)
+            end
+            if tex then
+                icon:SetTexture(tex)
+            else
+                icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+            end
         else
             icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
         end
 
         local nameFS = cell:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         nameFS:SetPoint("TOPLEFT", 48, -6)
-        nameFS:SetPoint("RIGHT", -120, 0)
+        nameFS:SetPoint("RIGHT", -130, 0)
         nameFS:SetJustifyH("LEFT")
-        local nameColor = learned and "|cff33ee66" or "|cffffcc66"
-        nameFS:SetText(nameColor .. (entry.name or "?") .. "|r")
+        -- Prefer live in-game name (item first, then spell for enchants)
+        local displayName = entry.name or "?"
+        local qualityColor -- hex without leading |
+        if entry.itemID and entry.itemID > 0 then
+            local liveName = C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(entry.itemID)
+            if not liveName and GetItemInfo then
+                liveName = GetItemInfo(entry.itemID)
+            end
+            if liveName and liveName ~= "" then
+                displayName = liveName
+            end
+            -- Item quality color (poor/common/uncommon/rare/epic/legendary…)
+            local q
+            if C_Item and C_Item.GetItemQualityByID then
+                q = C_Item.GetItemQualityByID(entry.itemID)
+            end
+            if (not q or q < 0) and GetItemInfo then
+                local _, _, itemQuality = GetItemInfo(entry.itemID)
+                q = itemQuality
+            end
+            if type(q) == "number" and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[q] then
+                local c = ITEM_QUALITY_COLORS[q]
+                qualityColor = string.format("ff%02x%02x%02x",
+                    math.floor((c.r or 1) * 255),
+                    math.floor((c.g or 1) * 255),
+                    math.floor((c.b or 1) * 255))
+            end
+        elseif entry.spellID and entry.spellID > 0 then
+            local liveName
+            if C_Spell and C_Spell.GetSpellName then
+                liveName = C_Spell.GetSpellName(entry.spellID)
+            elseif GetSpellInfo then
+                liveName = GetSpellInfo(entry.spellID)
+            end
+            if liveName and liveName ~= "" then
+                displayName = liveName
+            end
+        end
+        -- Quality color on the name; learned status still shown in the meta line
+        local nameColor = qualityColor
+            or (learned == true and "ff33ee66")
+            or (learned == false and "ffffcc66")
+            or "ffaaaaaa"
+        nameFS:SetText("|" .. nameColor .. displayName .. "|r")
 
         local meta = cell:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         meta:SetPoint("TOPLEFT", 48, -22)
-        meta:SetPoint("RIGHT", -8, 0)
+        meta:SetPoint("RIGHT", -130, 0)
         meta:SetJustifyH("LEFT")
         meta:SetTextColor(0.65, 0.65, 0.65)
         local bits = {}
-        if entry.skill and entry.skill > 0 then bits[#bits + 1] = "Skill " .. entry.skill end
-        if entry.source then bits[#bits + 1] = entry.source end
-        if learned then bits[#bits + 1] = "|cff33ee66Learned|r" else bits[#bits + 1] = "|cff888888Unknown / open profession|r" end
+        if entry.skill and entry.skill > 0 then
+            local skillBit = "Skill " .. entry.skill
+            if entry.trainCost and entry.trainCost > 0 then
+                local costStr
+                if GetCoinTextureString then
+                    costStr = GetCoinTextureString(entry.trainCost)
+                else
+                    local g = math.floor(entry.trainCost / 10000)
+                    local s = math.floor((entry.trainCost % 10000) / 100)
+                    local c = entry.trainCost % 100
+                    if g > 0 then
+                        costStr = string.format("%dg %ds %dc", g, s, c)
+                    elseif s > 0 then
+                        costStr = string.format("%ds %dc", s, c)
+                    else
+                        costStr = string.format("%dc", c)
+                    end
+                end
+                skillBit = skillBit .. "  ·  Train " .. costStr
+            end
+            bits[#bits + 1] = skillBit
+        end
+        if learned == true then
+            bits[#bits + 1] = "|cff33ee66Learned|r"
+        elseif learned == false then
+            bits[#bits + 1] = "|cffff6644Missing|r"
+        else
+            bits[#bits + 1] = "|cff888888Not scanned yet|r"
+        end
         meta:SetText(table.concat(bits, "  ·  "))
 
-        -- Reagent have/need summary on the right
-        local reagFS = cell:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        reagFS:SetPoint("TOPRIGHT", -8, -6)
-        reagFS:SetJustifyH("RIGHT")
-        if type(entry.reagents) == "table" and #entry.reagents > 0 then
-            local parts = {}
-            local allHave = true
-            for _, r in ipairs(entry.reagents) do
-                if r.itemID and r.itemID > 0 then
-                    local have = addon:GetItemCount(r.itemID) or 0
-                    local need = r.amount or 1
-                    if have < need then allHave = false end
-                    local col = have >= need and "33ee66" or "ff6644"
-                    parts[#parts + 1] = string.format("|cff%s%d/%d|r", col, have, need)
-                end
-            end
-            reagFS:SetText(table.concat(parts, " "))
+        -- Source on the right (materials stay in tooltip on hover)
+        local srcFS = cell:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        srcFS:SetPoint("TOPRIGHT", -8, -6)
+        srcFS:SetJustifyH("RIGHT")
+        srcFS:SetTextColor(0.75, 0.72, 0.55)
+        if entry.source and entry.source ~= "" then
+            srcFS:SetText(entry.source)
         else
-            reagFS:SetText("")
+            srcFS:SetText("")
         end
 
         cell:EnableMouse(true)
@@ -286,6 +633,9 @@ function addon:BuildRecipes()
             GameTooltip:SetOwner(selfBtn, "ANCHOR_RIGHT")
             if entry.itemID and entry.itemID > 0 then
                 GameTooltip:SetItemByID(entry.itemID)
+            elseif entry.spellID and entry.spellID > 0 then
+                -- Enchant recipes: show the spell tooltip (correct icon + description)
+                GameTooltip:SetSpellByID(entry.spellID)
             else
                 GameTooltip:AddLine(entry.name or "Recipe", 1, 0.85, 0.2)
             end
@@ -317,9 +667,18 @@ function addon:BuildRecipes()
     end
 
     list:SetSize(520, math.abs(y) + 8)
+
+    local statusNote
+    if HasPersistedScan(profName)
+        or (learnedCacheReady and learnedCacheProfName
+            and strlower(learnedCacheProfName) == strlower(profName)) then
+        statusNote = "status saved for this character"
+    else
+        statusNote = "open " .. profName .. " once to scan learned recipes"
+    end
     sub:SetText(string.format(
-        "%d shown / %d in catalog  ·  wow-professions.com · wowhead.com",
-        #rows, #all
+        "%d shown / %d in catalog  ·  %s",
+        #rows, #all, statusNote
     ))
 end
 
