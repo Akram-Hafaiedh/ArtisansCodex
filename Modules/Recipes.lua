@@ -528,7 +528,27 @@ local function RecipeMatchesSearch(entry, q)
     return false
 end
 
+
+-- Jump here from Leveling (or elsewhere): select profession, optional search/focus.
+-- opts = { spellID = n, itemID = n, name = "Bright Linen Bolt" }
+function addon:OpenRecipesFocus(profName, opts)
+    opts = opts or {}
+    if type(profName) == "string" and profName ~= "" then
+        self.selectedRecipesProf = profName
+    end
+    self.recipesFocusSpellID = (opts.spellID and opts.spellID > 0) and opts.spellID or nil
+    self.recipesFocusItemID  = (opts.itemID and opts.itemID > 0) and opts.itemID or nil
+    self.recipesFocusName    = (type(opts.name) == "string" and opts.name ~= "") and opts.name or nil
+    -- Prefill search with recipe name so the list narrows if many rows
+    if self.recipesFocusName then
+        self.recipesSearch = self.recipesFocusName
+    end
+    self.recipesFilter = self.recipesFilter or "All"
+    self:SelectTab("recipes")
+end
+
 function addon:BuildRecipes()
+    self._recipesFocusScrolled = nil
     local page = self.mainFrame and self.mainFrame.tabContents and self.mainFrame.tabContents["recipes"]
     if not page then return end
 
@@ -768,6 +788,38 @@ function addon:BuildRecipes()
         })
         cell:SetBackdropColor(0.09, 0.10, 0.14, 0.95)
         cell:SetBackdropBorderColor(0.25, 0.25, 0.28, 0.7)
+
+        -- Deep-link highlight from Leveling (OpenRecipesFocus)
+        local focusHit = false
+        if self.recipesFocusSpellID and entry.spellID and entry.spellID == self.recipesFocusSpellID then
+            focusHit = true
+        elseif self.recipesFocusItemID and entry.itemID and entry.itemID == self.recipesFocusItemID then
+            focusHit = true
+        elseif self.recipesFocusName and entry.name
+            and strlower(entry.name) == strlower(self.recipesFocusName) then
+            focusHit = true
+        end
+        if focusHit then
+            cell:SetBackdropColor(0.28, 0.22, 0.08, 1)
+            cell:SetBackdropBorderColor(0.95, 0.80, 0.25, 1)
+            -- Scroll this row into view once after layout
+            if not self._recipesFocusScrolled then
+                self._recipesFocusScrolled = true
+                local focusY = y  -- capture current list offset
+                C_Timer.After(0.05, function()
+                    if scroll and scroll.SetVerticalScroll then
+                        -- y is negative downward from top of list
+                        local scrollTo = math.max(0, -focusY - 20)
+                        scroll:SetVerticalScroll(scrollTo)
+                    end
+                    -- Clear focus so next open is not stuck
+                    self.recipesFocusSpellID = nil
+                    self.recipesFocusItemID = nil
+                    self.recipesFocusName = nil
+                    self._recipesFocusScrolled = nil
+                end)
+            end
+        end
 
         local icon = cell:CreateTexture(nil, "ARTWORK")
         icon:SetSize(32, 32)

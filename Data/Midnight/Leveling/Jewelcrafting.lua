@@ -57,7 +57,7 @@ P.leveling = {
 
             quantity = 4,
 
-            materials = {
+            reagents = {
 
                 { name = "Cheap ore", amount = 60, itemID = 237359 },
 
@@ -81,7 +81,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {},
+            reagents = {},
 
             note = "New recipes unlock every 5 skill points. Filter by First Craft Bonus, craft each recipe once, then check the trainer for the next batch. Repeat until the skill 50 trainer batch is done.",
 
@@ -99,7 +99,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "You unlock your first Jewelcrafting specialization at skill 25.",
 
@@ -114,10 +114,11 @@ P.leveling = {
             range = "50-65",
 
             recipe = "Monologuer's Chalice",
+            spellID = 1230499,
 
             quantity = 40,
 
-            materials = {
+            reagents = {
 
                 { name = "Crystalline Glass", amount = 80, itemID = 242786 },
 
@@ -137,7 +138,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {},
+            reagents = {},
 
             note = "Each diamond cut gives 2 skill points, orange to 80, yellow after. The recipes drop in Midnight dungeons or can be bought on the Auction House. Optional -- only needed for guaranteed gold-quality jewelry without Concentration.",
 
@@ -153,7 +154,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {},
+            reagents = {},
 
             note = "Rare profession equipment (bought from Gelanthis in Silvermoon City) has no time-gated materials, so spam craft it or fill Crafting Orders for other players. Epic profession equipment gives 3 skill/craft and stays orange to 100 but costs more. Ring/necklace specialization jewelry also gives skill via Crafting Orders but needs Sparks.",
 

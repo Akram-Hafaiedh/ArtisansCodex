@@ -37,7 +37,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "There's no dedicated skinning grind route -- skill comes naturally from skinning mobs while questing/leveling your character. Watch for the skinning-knife icon on the minimap (High Value Beasts) for bonus leather, and throw a Diffuser at a mob before killing it to also collect Motes.",
 

@@ -32,10 +32,11 @@ P.leveling = {
             range = "1-15",
 
             recipe = "Refulgent Copper Ingot",
+            spellID = 1230761,
 
             quantity = 25,
 
-            materials = {
+            reagents = {
 
                 { name = "Refulgent Copper Ore", amount = 125, itemID = 237359 },
 
@@ -55,7 +56,7 @@ P.leveling = {
 
             quantity = 28,
 
-            materials = {
+            reagents = {
 
                 { name = "Refulgent Copper Ingot", amount = 100, itemID = 238197 },
                 { name = "Brilliant Silver Ore", amount = 6, itemID = 237364 },
@@ -82,7 +83,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "At skill 25 you unlock your first Blacksmithing specialization tree. It matters more later for the 70-100 stretch than right now, so check the Specialization guide/build before committing points.",
 
@@ -97,10 +98,11 @@ P.leveling = {
             range = "50-70",
 
             recipe = "Sterling Alloy",
+            spellID = 1230763,
 
             quantity = 50,
 
-            materials = {
+            reagents = {
 
                 { name = "Luminant Flux", amount = 200, itemID = 243060 },
 
@@ -174,7 +176,7 @@ P.leveling = {
 
             quantity = 8,
 
-            materials = {
+            reagents = {
 
                 { name = "Sterling Alloy", amount = 40, itemID = 238204 },
                 { name = "Majestic Claw", amount = 6, itemID = 238528 },
@@ -204,7 +206,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {
+            reagents = {
 
                 { name = "Fused Vitality", amount = 20, itemID = 245345 },
 
@@ -226,7 +228,7 @@ P.leveling = {
 
             quantity = 10,
 
-            materials = {},
+            reagents = {},
 
             note = "Recipes come from the Armorsmithing/Weaponsmithing specializations, or from vendors and world drops. All give 3 skill points and are orange to 100, so 10 completions finishes the profession. Patron Orders are personal NPC requests (not guaranteed to match what you can craft); Public Orders are realm-only and get claimed fast -- remember to hit 'Search' on the Public Orders tab, they don't load automatically.",
 

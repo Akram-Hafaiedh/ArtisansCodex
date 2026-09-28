@@ -61,7 +61,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {},
+            reagents = {},
 
             note = "You start with both recipes. Craft each once for the First Craft Bonus, then visit the trainer for more.",
 
@@ -77,7 +77,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {},
+            reagents = {},
 
             note = "New recipes unlock every 5-10 skill. Filter by First Craft Bonus, craft each recipe once, check the trainer for the next batch, repeat through the skill 50 trainer batch. You'll land around skill 61. If Fantastic Fur, Peerless Plumage, or Carving Canine are too pricey on the AH, craft another orange multi-point recipe instead to keep first-crafting. Equip the Hideworker's Cover you craft along the way.",
 
@@ -95,7 +95,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "You unlock your first Leatherworking specialization at skill 25.",
 
@@ -113,7 +113,7 @@ P.leveling = {
 
             quantity = 35,
 
-            materials = {
+            reagents = {
 
                 { name = "Duskshrouded Stone / Scalewoven Hide / Infused Scalewoven Hide", amount = 35, itemID = 0 },
 
@@ -137,7 +137,7 @@ P.leveling = {
 
             quantity = 3,
 
-            materials = {},
+            reagents = {},
 
             note = "Epic armor recipes from the leather/mail specializations, vendors, drops, or quests give 3 skill points each and are orange to 100 -- 3 completions finishes leveling. Remember to hit Search on the Public Orders tab, it doesn't load automatically. If no orders are available, keep crafting the 60-91 recipe above; it also carries skill to 100, just slower.",
 

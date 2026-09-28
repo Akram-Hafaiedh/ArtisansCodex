@@ -32,10 +32,11 @@ P.leveling = {
             range = "1-20",
 
             recipe = "Midnight Milling",
+            spellID = 1269575,
 
             quantity = 640,
 
-            materials = {
+            reagents = {
 
                 { name = "Tranquility Bloom", amount = 360, itemID = 236761 },
 
@@ -61,7 +62,7 @@ P.leveling = {
 
             quantity = 23,
 
-            materials = {
+            reagents = {
 
                 { name = "Thalassian Songwater", amount = 69, itemID = 245882 },
 
@@ -89,7 +90,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "At skill 25 you unlock Inscription specializations. Learn Calm Hands FIRST, it teaches the Thalassian Treatise on Inscription recipe you'll use to level from ~45 to 100. You'll eventually unlock all four trees (50/60/75), so the order after Calm Hands doesn't matter much.",
 
@@ -113,7 +114,7 @@ P.leveling = {
 
             quantity = 4,
 
-            materials = {
+            reagents = {
 
                 { name = "Thalassian Songwater", amount = 3, itemID = 245882 },
 
@@ -147,7 +148,7 @@ P.leveling = {
 
             quantity = 9,
 
-            materials = {
+            reagents = {
 
                 { name = "Azeroot", amount = 31, itemID = 236774 },
 
@@ -176,10 +177,11 @@ P.leveling = {
             range = "42-45",
 
             recipe = "Thalassian Treatise on Inscription",
+            spellID = 1230032,
 
             quantity = 3,
 
-            materials = {
+            reagents = {
 
                 { name = "Lexicologist's Vellum", amount = 9, itemID = 245880 },
 
@@ -205,7 +207,7 @@ P.leveling = {
 
             quantity = 5,
 
-            materials = {
+            reagents = {
 
                 { name = "Munsell Ink", amount = 7, itemID = 245801 },
 
@@ -233,7 +235,7 @@ P.leveling = {
 
             quantity = 70,
 
-            materials = {
+            reagents = {
 
                 { name = "Munsell Ink", amount = 70, itemID = 245801 },
 
@@ -259,7 +261,7 @@ P.leveling = {
 
             quantity = 3,
 
-            materials = {},
+            reagents = {},
 
             note = "If Treatise skill gains slow down near the end, and you've unlocked a weapon recipe (Aln'hara Cane/Pikestaff/Lantern/Sprigshot) via the Blueprints specialization, complete 1-3 Crafting Orders for them instead — each gives 3 skill points. These need a Spark (BoP, one every 2 weeks), so you must use Crafting Orders rather than crafting them yourself. Good stopping/checkpoint levels are 91, 94, or 97.",
 

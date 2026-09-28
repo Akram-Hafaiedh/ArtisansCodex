@@ -48,10 +48,11 @@ P.leveling = {
             range = "1-7",
 
             recipe = "Silvermoon Health Potion",
+            spellID = 1230866,
 
             quantity = 6,
 
-            materials = {
+            reagents = {
 
                 { name = "Tranquility Bloom", amount = 36, itemID = 236761 },
 
@@ -70,10 +71,11 @@ P.leveling = {
             range = "7-20",
 
             recipe = "Recycle Potions",
+            spellID = 1233129,
 
             quantity = 10,
 
-            materials = {
+            reagents = {
 
                 { name = "Silvermoon Health Potion", amount = 10, itemID = 240980 },
 
@@ -95,7 +97,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {},
+            reagents = {},
 
             note = "Important, don't skip: interact with Camberon's Cauldron next to the trainer and research Primal Philosopher's Stone and Lightfused Mana Potion. It's not RNG, you just pick what to learn and spend Moxie.",
 
@@ -110,10 +112,11 @@ P.leveling = {
             range = "First Crafts",
 
             recipe = "Refreshing Serum",
+            spellID = 1230868,
 
             quantity = 1,
 
-            materials = {
+            reagents = {
 
                 { name = "Tranquility Bloom", amount = 8, itemID = 236761 },
 
@@ -134,10 +137,11 @@ P.leveling = {
             range = "First Crafts",
 
             recipe = "Lightfused Mana Potion",
+            spellID = 1230865,
 
             quantity = 1,
 
-            materials = {
+            reagents = {
 
                 { name = "Tranquility Bloom", amount = 8, itemID = 236761 },
 
@@ -158,10 +162,11 @@ P.leveling = {
             range = "First Crafts",
 
             recipe = "Primal Philosopher's Stone",
+            spellID = 1230861,
 
             quantity = 1,
 
-            materials = {
+            reagents = {
 
                 { name = "Stabilized Derivate", amount = 2, itemID = 242651 },
 
@@ -182,10 +187,11 @@ P.leveling = {
             range = "First Crafts",
 
             recipe = "Transmute: Mote of Wild Magic",
+            spellID = 1230887,
 
             quantity = 1,
 
-            materials = {
+            reagents = {
 
                 { name = "Mote of Light", amount = 10, itemID = 236949 },
 
@@ -204,10 +210,11 @@ P.leveling = {
             range = "First Crafts",
 
             recipe = "Composite Flora",
+            spellID = 1230855,
 
             quantity = 1,
 
-            materials = {
+            reagents = {
 
                 { name = "Mote of Wild Magic", amount = 4, itemID = 236951 },
 
@@ -230,10 +237,11 @@ P.leveling = {
             range = "First Crafts",
 
             recipe = "Enlightenment Tonic",
+            spellID = 1230886,
 
             quantity = 1,
 
-            materials = {
+            reagents = {
 
                 { name = "Tranquility Bloom", amount = 3, itemID = 236761 },
 
@@ -252,10 +260,11 @@ P.leveling = {
             range = "First Crafts",
 
             recipe = "Entropic Extract",
+            spellID = 1230854,
 
             quantity = 1,
 
-            materials = {
+            reagents = {
 
                 { name = "Tranquility Bloom", amount = 3, itemID = 236761 },
 
@@ -277,7 +286,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "You unlock your first Alchemy specialization at skill 25.",
 
@@ -292,10 +301,11 @@ P.leveling = {
             range = "27-32",
 
             recipe = "Entropic Extract",
+            spellID = 1230854,
 
             quantity = 8,
 
-            materials = {
+            reagents = {
 
                 { name = "Tranquility Bloom", amount = 24, itemID = 236761 },
 
@@ -314,10 +324,11 @@ P.leveling = {
             range = "32-50",
 
             recipe = "Silvermoon Health Potion",
+            spellID = 1230866,
 
             quantity = 30,
 
-            materials = {
+            reagents = {
 
                 { name = "Tranquility Bloom", amount = 180, itemID = 236761 },
 
@@ -374,12 +385,13 @@ P.leveling = {
             path = "potions",
 
             recipe = "Light's Potential",
+            spellID = 1230869,
 
             itemID = 0,
 
             quantity = 80,
 
-            materials = {
+            reagents = {
 
                 { name = "Mote of Light", amount = 80, itemID = 236949 },
 
@@ -411,7 +423,7 @@ P.leveling = {
 
             quantity = 45,
 
-            materials = {
+            reagents = {
 
                 { name = "Nocturnal Lotus", amount = 45, itemID = 236780 },
 

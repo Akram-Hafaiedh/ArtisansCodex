@@ -37,7 +37,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "Pretty much everything gives skill points. Tranquility Bloom stops giving skill at 30, the rest carry you further.",
 
@@ -53,7 +53,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "Sanguithorn, Azeroot, Argentleaf, and Mana Lily go yellow at 30 and grey at 60. Lush and Infused variants also give skill here.",
 
@@ -69,7 +69,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "All base herbs are grey now. Only Lush and Infused variants give skill (yellow at 60, grey at 100). They spawn randomly in place of normal herbs.",
 

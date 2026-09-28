@@ -37,7 +37,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "Pretty much every deposit gives skill points. You'll reach 30 fast just mining whatever you find.",
 
@@ -53,7 +53,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "Base deposits go yellow at 30 and grey at 60. Rich deposits, Seams, and Infused variants keep giving skill through this range.",
 
@@ -69,7 +69,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "All base deposits are grey now. Only Rich deposits, Seams, and Infused variants give skill (yellow at 60, grey at 100). They spawn randomly in place of normal deposits.",
 

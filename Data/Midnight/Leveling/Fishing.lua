@@ -39,7 +39,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "Pool fishing works at any skill but is slower than open water.",
 
@@ -55,7 +55,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "The 'recommended' zone skill level is when you stop getting grey trash from the previous zone -- don't switch too early.",
 
@@ -71,7 +71,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "",
 
@@ -87,7 +87,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "Voidstorm has very little fishable water -- only two known open-water spots, plus rare Oceanic Vortex bubbles.",
 

@@ -33,12 +33,13 @@ P.leveling = {
             range = "1-25",
 
             recipe = "Bright Linen Bolt",
+            spellID = 1228939,
 
             itemID = 239700,
 
             quantity = 66,
 
-            materials = {
+            reagents = {
 
                 { name = "Bright Linen", amount = 66, itemID = 236963 },
 
@@ -55,12 +56,13 @@ P.leveling = {
             range = "25-40",
 
             recipe = "Imbued Bright Linen Bolt",
+            spellID = 1228940,
 
             itemID = 239702,
 
             quantity = 14,
 
-            materials = {
+            reagents = {
 
                 { name = "Bright Linen Bolt", amount = 28, itemID = 239700 },
 
@@ -80,7 +82,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {},
+            reagents = {},
 
             note = "Craft every remaining First Craft recipe for Knowledge Points. Equip the Bright Linen Tailoring Robe when finished.",
 
@@ -94,11 +96,12 @@ P.leveling = {
 
                     name = "Courtly Helm",
 
-                    itemID = 239670,
+                    spellID = 1228951,
+                    itemID = 239668,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Bright Linen Bolt", amount = 3, itemID = 239700 },
 
@@ -114,11 +117,12 @@ P.leveling = {
 
                     name = "Courtly Shoulders",
 
+                    spellID = 1228959,
                     itemID = 239675,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Bright Linen Bolt", amount = 2, itemID = 239700 },
 
@@ -134,11 +138,12 @@ P.leveling = {
 
                     name = "Courtly Cloak",
 
-                    itemID = 239678,
+                    spellID = 1228958,
+                    itemID = 239674,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Bright Linen Bolt", amount = 2, itemID = 239700 },
 
@@ -152,11 +157,12 @@ P.leveling = {
 
                     name = "Courtly Robes",
 
-                    itemID = 239680,
+                    spellID = 1228955,
+                    itemID = 239672,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Bright Linen Bolt", amount = 2, itemID = 239700 },
 
@@ -170,11 +176,12 @@ P.leveling = {
 
                     name = "Courtly Gloves",
 
-                    itemID = 239682,
+                    spellID = 1228952,
+                    itemID = 239669,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Bright Linen Bolt", amount = 2, itemID = 239700 },
 
@@ -188,11 +195,12 @@ P.leveling = {
 
                     name = "Courtly Pants",
 
-                    itemID = 239684,
+                    spellID = 1228956,
+                    itemID = 239676,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Bright Linen Bolt", amount = 3, itemID = 239700 },
 
@@ -208,11 +216,12 @@ P.leveling = {
 
                     name = "Courtly Belt",
 
-                    itemID = 239686,
+                    spellID = 1228953,
+                    itemID = 239670,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Bright Linen Bolt", amount = 2, itemID = 239700 },
 
@@ -226,11 +235,12 @@ P.leveling = {
 
                     name = "Courtly Slippers",
 
+                    spellID = 1228957,
                     itemID = 239673,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Bright Linen Bolt", amount = 2, itemID = 239700 },
 
@@ -244,11 +254,12 @@ P.leveling = {
 
                     name = "Courtly Wrists",
 
-                    itemID = 239690,
+                    spellID = 1228954,
+                    itemID = 239671,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Bright Linen Bolt", amount = 1, itemID = 239700 },
 
@@ -262,11 +273,12 @@ P.leveling = {
 
                     name = "Bright Linen Tailoring Robe",
 
+                    spellID = 1228973,
                     itemID = 239646,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Imbued Bright Linen Bolt", amount = 2, itemID = 239702 },
 
@@ -287,12 +299,13 @@ P.leveling = {
             range = "44-50",
 
             recipe = "Courtly Shoulders",
+            spellID = 1228959,
 
             itemID = 239675,
 
             quantity = 6,
 
-            materials = {
+            reagents = {
 
                 { name = "Bright Linen Bolt", amount = 12, itemID = 239700 },
 
@@ -368,7 +381,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {},
+            reagents = {},
 
             note = "Spend 5 Knowledge Points in the Nimble Needlework root node, " ..
 
@@ -417,12 +430,13 @@ P.leveling = {
             header = "Warm up with Spellthreads",
 
             recipe = "Bright Linen Spellthread",
+            spellID = 1228976,
 
             itemID = 240157,
 
             quantity = 30,
 
-            materials = {
+            reagents = {
 
                 { name = "Imbued Bright Linen Bolt", amount = 60, itemID = 239702 },
 
@@ -458,7 +472,7 @@ P.leveling = {
 
                     itemID = 240164,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Sunfire Silk",      amount = 168, itemID = 237015 },
 
@@ -476,7 +490,7 @@ P.leveling = {
 
                     itemID = 240166,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Arcanoweave",      amount = 168, itemID = 237016 },
 
@@ -506,7 +520,7 @@ P.leveling = {
 
             quantity = 13,
 
-            materials = {
+            reagents = {
 
                 { name = "Mote of Light",     amount = 67,  itemID = 236949 },
 
@@ -526,11 +540,12 @@ P.leveling = {
 
                     name = "Elegant Artisan's Cooking Hat",
 
+                    spellID = 1228963,
                     itemID = 239636,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Mote of Light", amount = 5, itemID = 236949 },
 
@@ -546,11 +561,12 @@ P.leveling = {
 
                     name = "Elegant Artisan's Enchanting Hat",
 
+                    spellID = 1228964,
                     itemID = 239637,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Mote of Light", amount = 5, itemID = 236949 },
 
@@ -566,11 +582,12 @@ P.leveling = {
 
                     name = "Elegant Artisan's Fishing Hat",
 
+                    spellID = 1228965,
                     itemID = 239638,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Mote of Light", amount = 5, itemID = 236949 },
 
@@ -586,11 +603,12 @@ P.leveling = {
 
                     name = "Elegant Artisan's Herbalism Hat",
 
-                    itemID = 239640,
+                    spellID = 1228966,
+                    itemID = 239639,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Mote of Light", amount = 5, itemID = 236949 },
 
@@ -606,11 +624,12 @@ P.leveling = {
 
                     name = "Elegant Artisan's Alchemy Coveralls",
 
-                    itemID = 239641,
+                    spellID = 1228962,
+                    itemID = 239635,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Mote of Light", amount = 5, itemID = 236949 },
 
@@ -626,11 +645,12 @@ P.leveling = {
 
                     name = "Elegant Artisan's Tailoring Robe",
 
-                    itemID = 239642,
+                    spellID = 1228967,
+                    itemID = 239640,
 
                     quantity = 1,
 
-                    materials = {
+                    reagents = {
 
                         { name = "Mote of Light", amount = 5, itemID = 236949 },
 

@@ -32,10 +32,11 @@ P.leveling = {
             range = "1-25",
 
             recipe = "Spiced Biscuits",
+            spellID = 1226200,
 
             quantity = 50,
 
-            materials = {
+            reagents = {
 
                 { name = "A Big Ol' Stick of Butter", amount = 50, itemID = 242643 },
 
@@ -54,10 +55,11 @@ P.leveling = {
             range = "25-35",
 
             recipe = "Felberry Figs",
+            spellID = 1226190,
 
             quantity = 10,
 
-            materials = {
+            reagents = {
 
                 { name = "Plant Protein", amount = 100, itemID = 242640 },
 
@@ -83,7 +85,7 @@ P.leveling = {
 
             quantity = 100,
 
-            materials = {
+            reagents = {
 
                 { name = "A Big Ol' Stick of Butter", amount = 200, itemID = 242643 },
 

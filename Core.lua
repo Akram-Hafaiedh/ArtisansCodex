@@ -90,28 +90,37 @@ function addon:GetLearnedSkillLineID(professionName)
     if type(professionName) ~= "string" or professionName == "" then
         return nil
     end
-    -- GetProfessions() returns primary1, primary2, archaeology, fishing, cooking
-    -- Cooking and Fishing are secondary slots — must not skip them.
+    -- GetProfessions() → primary1, primary2, archaeology, fishing, cooking
+    -- IMPORTANT: do NOT ipairs() a list that may contain nil — ipairs stops at the
+    -- first hole, so a missing Archaeology slot would skip Fishing and Cooking.
     local p1, p2, archaeology, fishing, cooking = GetProfessions()
-    for _, idx in ipairs({ p1, p2, archaeology, fishing, cooking }) do
+    local indices = { p1, p2, archaeology, fishing, cooking }
+    for i = 1, #indices do
+        local idx = indices[i]
         if idx then
             local name, _, _, _, _, _, skillLine = GetProfessionInfo(idx)
-            if name == professionName then
+            if type(name) ~= "string" then
+                -- continue
+            elseif name == professionName then
                 return skillLine
-            end
-            -- Skill line labels can be expansion-prefixed (e.g. "Midnight Cooking")
-            if type(name) == "string" then
+            else
+                -- Expansion-prefixed skill lines (e.g. "Midnight Cooking")
                 local bare = name:match("Midnight%s+(.+)$")
                     or name:match("Khaz Algar%s+(.+)$")
                     or name:match("Dragon Isles%s+(.+)$")
+                    or name:match("Shadowlands%s+(.+)$")
+                    or name:match("Kul Tiran%s+(.+)$")
+                    or name:match("Zandalari%s+(.+)$")
+                    or name:match("Legion%s+(.+)$")
                 if bare and bare == professionName then
                     return skillLine
                 end
-                if name:find(professionName, 1, true) and (
-                    professionName == "Cooking"
+                -- Secondary professions: name often still contains the base word
+                if (professionName == "Cooking"
                     or professionName == "Fishing"
-                    or professionName == "Archaeology"
-                ) then
+                    or professionName == "Archaeology")
+                    and name:find(professionName, 1, true)
+                then
                     return skillLine
                 end
             end
@@ -461,11 +470,18 @@ function addon:ScanProfessionSkills()
         return name:match("Midnight%s+(.+)$")
             or name:match("Khaz Algar%s+(.+)$")
             or name:match("Dragon Isles%s+(.+)$")
+            or name:match("Shadowlands%s+(.+)$")
+            or name:match("Kul Tiran%s+(.+)$")
+            or name:match("Zandalari%s+(.+)$")
+            or name:match("Legion%s+(.+)$")
             or name
     end
 
+    -- Do not ipairs() over a table with nil holes (skips Fishing/Cooking if Archaeology is nil).
     local p1, p2, archaeology, fishing, cooking = GetProfessions()
-    for _, idx in ipairs({ p1, p2, archaeology, fishing, cooking }) do
+    local indices = { p1, p2, archaeology, fishing, cooking }
+    for i = 1, #indices do
+        local idx = indices[i]
         if idx then
             local name, _, skillLevel, maxSkill, _, _, skillLine = GetProfessionInfo(idx)
             if name then

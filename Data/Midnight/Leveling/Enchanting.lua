@@ -45,7 +45,7 @@ P.leveling = {
 
             quantity = 30,
 
-            materials = {
+            reagents = {
 
                 { name = "Refulgent Copper Rod", amount = 30, itemID = 244174 },
 
@@ -67,7 +67,7 @@ P.leveling = {
 
             quantity = 0,
 
-            materials = {},
+            reagents = {},
 
             note = "You unlock Enchanting specializations at skill 25. Don't rush picking one, just keep leveling to ~60 first.",
 
@@ -85,7 +85,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {
+            reagents = {
 
                 { name = "Eversinging Dust", amount = 20, itemID = 243599 },
 
@@ -111,7 +111,7 @@ P.leveling = {
 
             quantity = 14,
 
-            materials = {
+            reagents = {
 
                 { name = "Eversinging Dust", amount = 70, itemID = 243599 },
 
@@ -133,7 +133,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {
+            reagents = {
 
                 { name = "Eversinging Dust", amount = 30, itemID = 243599 },
 
@@ -152,10 +152,11 @@ P.leveling = {
             range = "40-52",
 
             recipe = "Thalassian Spellweaver's Wand",
+            spellID = 1236489,
 
             quantity = 4,
 
-            materials = {
+            reagents = {
 
                 { name = "Eversinging Dust", amount = 60, itemID = 243599 },
 
@@ -177,7 +178,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {
+            reagents = {
 
                 { name = "Eversinging Dust", amount = 35, itemID = 243599 },
 
@@ -201,7 +202,7 @@ P.leveling = {
 
             quantity = 24,
 
-            materials = {
+            reagents = {
 
                 { name = "Eversinging Dust", amount = 48, itemID = 243599 },
 
@@ -228,10 +229,11 @@ P.leveling = {
             range = "55-62",
 
             recipe = "Enchant Ring - Amani Mastery",
+            spellID = 1236058,
 
             quantity = 9,
 
-            materials = {
+            reagents = {
 
                 { name = "Eversinging Dust", amount = 45, itemID = 243599 },
 
@@ -251,7 +253,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {
+            reagents = {
 
                 { name = "Mote of Light / Wild Magic / Primal Energy / Pure Void", amount = 15, itemID = 0 },
 
@@ -279,7 +281,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {
+            reagents = {
 
                 { name = "Mote of Primal Energy", amount = 4, itemID = 236950 },
 

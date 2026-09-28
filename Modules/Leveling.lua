@@ -567,8 +567,8 @@ function addon:BuildLeveling()
                 -- RECIPE + MATERIALS
                 -- Two modes:
                 --   1. Step has `alternatives` → render pill selector,
-                --      then the selected alternative's materials.
-                --   2. Normal step → recipe name + icon + materials.
+                --      then the selected alternative's reagents.
+                --   2. Normal step → recipe name + icon + reagents.
                 -- ============================================================
                 local contentY = -50
                 local hasContent = false
@@ -651,8 +651,8 @@ function addon:BuildLeveling()
                         altX = altX + pillW + pillGap
                     end
 
-                    -- ---- Selected alternative's materials ----
-                    if selectedAlt and selectedAlt.materials and #selectedAlt.materials > 0 then
+                    -- ---- Selected alternative's reagents ----
+                    if selectedAlt and (selectedAlt.reagents or selectedAlt.materials) and #(selectedAlt.reagents or selectedAlt.materials) > 0 then
                         hasContent = true
                         local matX = 12
                         -- Position below the actual bottom edge of the pill
@@ -665,7 +665,7 @@ function addon:BuildLeveling()
                         matsLabel:SetText("|cff888888Mats:|r")
                         matX = matX + matsLabel:GetStringWidth() + 8
 
-                        for _, mat in ipairs(selectedAlt.materials) do
+                        for _, mat in ipairs(selectedAlt.reagents or selectedAlt.materials or {}) do
                             local amountText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
                             amountText:SetPoint("TOPLEFT", matX, matY)
                             amountText:SetText(mat.amount .. "x")
@@ -691,7 +691,7 @@ function addon:BuildLeveling()
 
                 else
                     -- ============================================================
-                    -- NORMAL STEP - recipe name + icon + materials
+                    -- NORMAL STEP - recipe name + icon + reagents
                     -- ============================================================
                     local recipeY = -28
                     local recipeX = 12
@@ -704,19 +704,55 @@ function addon:BuildLeveling()
                         recipeX = recipeX + quantityText:GetStringWidth() + 5
                     end
 
-                    local function AddRecipeEntry(name, itemID)
+                    local function AddRecipeEntry(name, itemID, spellID)
+                        local linkBtn = CreateFrame("Button", nil, row)
+                        linkBtn:SetHeight(18)
+                        local startX = recipeX
                         if itemID then
-                            local icon = row:CreateTexture(nil, "ARTWORK")
+                            local icon = linkBtn:CreateTexture(nil, "ARTWORK")
                             icon:SetSize(16, 16)
-                            icon:SetPoint("TOPLEFT", recipeX, recipeY + 1)
+                            icon:SetPoint("LEFT", 0, 0)
                             icon:SetTexture(addon:GetItemIcon(itemID))
                             icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-                            recipeX = recipeX + 20
                         end
-                        local txt = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-                        txt:SetPoint("TOPLEFT", recipeX, recipeY)
+                        local txt = linkBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                        if itemID then
+                            txt:SetPoint("LEFT", 20, 0)
+                        else
+                            txt:SetPoint("LEFT", 0, 0)
+                        end
                         txt:SetText(name or "")
-                        recipeX = recipeX + txt:GetStringWidth() + 16
+                        txt:SetTextColor(0.55, 0.85, 1)
+                        local w = (itemID and 20 or 0) + txt:GetStringWidth()
+                        linkBtn:SetWidth(math.max(w, 8))
+                        linkBtn:SetPoint("TOPLEFT", startX, recipeY)
+                        recipeX = startX + w + 16
+
+                        linkBtn:SetScript("OnEnter", function(btn)
+                            txt:SetTextColor(1, 0.95, 0.55)
+                            GameTooltip:SetOwner(btn, "ANCHOR_TOP")
+                            GameTooltip:AddLine(name or "Recipe", 1, 0.85, 0.2)
+                            GameTooltip:AddLine("Click to open in Recipes tab", 0.7, 0.7, 0.7)
+                            GameTooltip:Show()
+                        end)
+                        linkBtn:SetScript("OnLeave", function()
+                            txt:SetTextColor(0.55, 0.85, 1)
+                            GameTooltip:Hide()
+                        end)
+                        linkBtn:SetScript("OnClick", function()
+                            local prof = self.selectedLevelingProf
+                            if type(self.OpenRecipesFocus) == "function" then
+                                self:OpenRecipesFocus(prof, {
+                                    spellID = spellID,
+                                    itemID = itemID,
+                                    name = name,
+                                })
+                            else
+                                self.selectedRecipesProf = prof
+                                self.recipesSearch = name or ""
+                                self:SelectTab("recipes")
+                            end
+                        end)
                     end
 
                     if step.recipes and #step.recipes > 0 then
@@ -726,10 +762,10 @@ function addon:BuildLeveling()
                                 sep:SetPoint("TOPLEFT", recipeX - 12, recipeY)
                                 sep:SetText("|cff666666-|r")
                             end
-                            AddRecipeEntry(r.name, r.itemID)
+                            AddRecipeEntry(r.name, r.itemID, r.spellID)
                         end
                     else
-                        AddRecipeEntry(step.recipe, step.itemID)
+                        AddRecipeEntry(step.recipe, step.itemID, step.spellID)
                         if not step.itemID and step.itemIDs then
                             for _, id in ipairs(step.itemIDs) do
                                 local icon = row:CreateTexture(nil, "ARTWORK")
@@ -780,7 +816,7 @@ function addon:BuildLeveling()
                         end
 
                         contentY = wrapY
-                    elseif step.materials and #step.materials > 0 then
+                    elseif (step.reagents or step.materials) and #(step.reagents or step.materials) > 0 then
                         hasContent = true
                         local xOffset = 12
 
@@ -789,7 +825,7 @@ function addon:BuildLeveling()
                         matsLabel:SetText("|cff888888Mats:|r")
                         xOffset = xOffset + matsLabel:GetStringWidth() + 8
 
-                        for _, mat in ipairs(step.materials) do
+                        for _, mat in ipairs(step.reagents or step.materials or {}) do
                             local amountText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
                             amountText:SetPoint("TOPLEFT", xOffset, contentY)
                             amountText:SetText(mat.amount .. "x")
@@ -1122,7 +1158,7 @@ function addon:CollectAllMaterials(profData)
     end
 
     for _, entry in ipairs(profData.leveling or {}) do
-        -- Skip fork containers (they hold no materials of their own)
+        -- Skip fork containers (they hold no reagents of their own)
         if entry.type ~= "fork" then
             -- Respect the currently selected path
             local include = true
@@ -1145,20 +1181,20 @@ function addon:CollectAllMaterials(profData)
                     end
                     if not selectedAlt then selectedAlt = entry.alternatives[1] end
 
-                    for _, mat in ipairs(selectedAlt.materials or {}) do
+                    for _, mat in ipairs(selectedAlt.reagents or selectedAlt.materials or {}) do
                         addItem(mat.itemID, mat.name, mat.amount or 1)
                     end
 
                 else
-                    local hasStepMats = entry.materials and #entry.materials > 0
+                    local hasStepMats = (entry.reagents or entry.materials) and #(entry.reagents or entry.materials) > 0
                     if hasStepMats then
-                        for _, mat in ipairs(entry.materials) do
+                        for _, mat in ipairs(entry.reagents or entry.materials or {}) do
                             addItem(mat.itemID, mat.name, mat.amount or 1)
                         end
                     else
                         for _, craft in ipairs(entry.crafts or {}) do
                             local q = craft.quantity or 1
-                            for _, mat in ipairs(craft.materials or {}) do
+                            for _, mat in ipairs(craft.reagents or craft.materials or {}) do
                                 addItem(mat.itemID, mat.name, (mat.amount or 1) * q)
                             end
                         end
@@ -1210,7 +1246,7 @@ function addon:RenderShoppingListBody(page, profData, topY)
     if #list == 0 then
         local empty = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         empty:SetPoint("TOPLEFT", 20, -20)
-        empty:SetText("No materials found for this guide.")
+        empty:SetText("No reagents found for this guide.")
         content:SetHeight(60)
     else
         -- Column headers

@@ -157,7 +157,7 @@ P.leveling = {
 
             quantity = 8,
 
-            materials = {
+            reagents = {
 
                 { name = "Malleable Wireframe", amount = 8, itemID = 253302 },
 
@@ -181,7 +181,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {},
+            reagents = {},
 
             note = "Craft every available First Craft: Evercore Shade, Evercore Vision Guard, Evercore Dome Dinger, Evercore Zoomshroud, Evercore Reconaissance.",
 
@@ -199,7 +199,7 @@ P.leveling = {
 
             quantity = 10,
 
-            materials = {
+            reagents = {
 
                 { name = "Malleable Wireframe", amount = 10, itemID = 253302 },
 
@@ -229,7 +229,7 @@ P.leveling = {
 
             quantity = 20,
 
-            materials = {},
+            reagents = {},
 
             note = "Keep recycling the cheapest reagent available (see recycling.cheapest) and craft every remaining First Craft recipe in your book.",
 
@@ -295,7 +295,7 @@ P.leveling = {
 
             quantity = 60,
 
-            materials = {
+            reagents = {
 
                 { name = "Pile of Junk", amount = 300, itemID = 253303 },
 
@@ -323,7 +323,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {
+            reagents = {
 
                 { name = "Aetherlume", amount = 5, itemID = 243578 },
 
@@ -352,7 +352,7 @@ P.leveling = {
 
             quantity = 1,
 
-            materials = {},
+            reagents = {},
 
             note = "Epic profession tools (sold by Lyrendal for Artisan Engineer's Moxie) always give skill. Crafting Orders for Aetherlume armor or tools are also excellent.",
 
