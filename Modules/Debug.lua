@@ -393,15 +393,22 @@ local function IsPlaceholderSource(src)
 end
 
 -- Matches Recipes.lua ParseSource prefixes (+ Gather / Patch used in data)
+-- Accepted prefixes (must match Recipes.lua ParseSource):
+--   Trainer, Vendor[: name], Spec[: tree], Drop: x, Quest: x,
+--   Discovery[: x], Gather[: x], Housing, PvP, Recycling, Patch
 local function IsKnownSourceFormat(src)
     src = NormalizeSource(src)
     if src == "" then return false end
     if src:match("^[Tt]rainer") then return true end
     if src:match("^[Vv]endor") then return true end
-    if src:match("^[Ss]pec:") then return true end
+    if src:match("^[Ss]pec") then return true end          -- Spec or Spec: Tree
     if src:match("^[Dd]rop:") then return true end
     if src:match("^[Qq]uest:") then return true end
-    if src:match("^[Gg]ather:") then return true end
+    if src:match("^[Dd]iscovery") then return true end     -- Discovery or Discovery: x
+    if src:match("^[Gg]ather") then return true end
+    if src:match("^[Hh]ousing") then return true end
+    if src:match("^[Pp]v[Pp]") then return true end
+    if src:match("^[Rr]ecycling") then return true end
     if src:match("^[Pp]atch") then return true end
     return false
 end

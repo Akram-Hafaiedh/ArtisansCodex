@@ -53,25 +53,44 @@ local function ParseSource(source)
     if type(source) ~= "string" or source == "" then
         return "other", nil
     end
-    local spec = source:match("^[Ss]pec:%s*(.+)$")
-    if spec then return "spec", strtrim(spec) end
+    -- Spec: TreeName  OR  bare "Spec"  OR  "Spec / …" / "Trainer / Spec"
+    local specDetail = source:match("^[Ss]pec:%s*(.+)$")
+    if specDetail then
+        return "spec", specDetail
+    end
+    if source:match("^[Ss]pec%s*$") or source:match("^[Ss]pec%s*/") or source:match("/%s*[Ss]pec") then
+        return "spec", source
+    end
     local vendor = source:match("^[Vv]endor:%s*(.+)$")
     if vendor then
-        -- "Deynna (150 Moxie)" → "Deynna"
-        local name = vendor:match("^([^(]+)")
-        return "vendor", strtrim(name or vendor)
+        return "vendor", vendor
+    end
+    if source:match("^[Vv]endor") then
+        return "vendor", source
     end
     if source:match("^[Tt]rainer") then
         return "trainer", source:match("^[Tt]rainer:%s*(.+)$") or source
     end
     local drop = source:match("^[Dd]rop:%s*(.+)$")
-    if drop then return "drop", strtrim(drop) end
+    if drop then return "drop", drop end
     local quest = source:match("^[Qq]uest:%s*(.+)$")
-    if quest then return "quest", strtrim(quest) end
+    if quest then return "quest", quest end
     local discovery = source:match("^[Dd]iscovery:%s*(.+)$")
-    if discovery then return "discovery", strtrim(discovery) end
+    if discovery then return "discovery", discovery end
+    if source:match("^[Dd]iscovery") or source:match("^[Hh]ousing") then
+        return "discovery", source
+    end
     local gather = source:match("^[Gg]ather:%s*(.+)$")
-    if gather then return "gather", strtrim(gather) end
+    if gather then return "gather", gather end
+    if source:match("^[Gg]ather") or source:match("^[Ss]kinning") then
+        return "gather", source
+    end
+    if source:match("^[Pp]v[Pp]") then
+        return "other", source
+    end
+    if source:match("^[Rr]ecycling") then
+        return "discovery", source
+    end
     if source:match("^[Pp]atch") then return "other", source end
     return "other", source
 end
