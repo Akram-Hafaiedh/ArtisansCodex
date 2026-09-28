@@ -849,6 +849,7 @@ function addon:OnInitialize()
         private.Knowledge,
         private.Progress,
         private.Recipes,
+        private.Debug,
     }) do
         if mod and mod.Initialize then
             mod:Initialize()
@@ -900,9 +901,17 @@ function addon:SlashCommand(input)
             private:Print("Progress module not loaded.")
         end
     elseif input == "debug" then
+        if private.Debug and private.Debug.Toggle then
+            private.Debug:Toggle()
+        else
+            self.db.debug = not self.db.debug
+            private.debug = self.db.debug
+            private:Print("Debug mode:", self.db.debug and "|cff00ff00ON|r" or "|cffff0000OFF|r")
+        end
+    elseif input == "debug chat" or input == "debug toggle" then
         self.db.debug = not self.db.debug
         private.debug = self.db.debug
-        private:Print("Debug mode:", self.db.debug and "|cff00ff00ON|r" or "|cffff0000OFF|r")
+        private:Print("Chat debug mirror:", self.db.debug and "|cff00ff00ON|r" or "|cffff0000OFF|r")
     elseif input == "reset" or input == "reset all" then
         ArtisansCodexDB = nil
         ReloadUI()
@@ -928,7 +937,8 @@ function addon:SlashCommand(input)
         print("  |cffffff00/ac|r               - Open/Close main window")
         print("  |cffffff00/ac progress|r      - Account progress heatmap")
         print("  |cffffff00/ac scan|r          - Rescan this character's progress")
-        print("  |cffffff00/ac debug|r         - Toggle debug messages")
+        print("  |cffffff00/ac debug|r         - Open debug panel (log + recipe audit)")
+        print("  |cffffff00/ac debug chat|r    - Toggle chat debug messages")
         print("  |cffffff00/ac reset progress|r - Clear progress cache (keeps other settings)")
         print("  |cffffff00/ac reset|r         - Reset ALL settings + reload")
     end
@@ -985,10 +995,32 @@ function addon:CreateMainFrame()
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", -4, -4)
 
+    -- Debug panel (log + recipe audit)
+    local debugBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    debugBtn:SetSize(56, 22)
+    debugBtn:SetPoint("TOPRIGHT", close, "TOPLEFT", -6, -6)
+    debugBtn:SetText("Debug")
+    debugBtn:SetScript("OnClick", function()
+        if private.Debug and private.Debug.Toggle then
+            private.Debug:Toggle()
+        else
+            private:Print("Debug module not loaded.")
+        end
+    end)
+    debugBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:AddLine("Debug", 1, 0.85, 0.2)
+        GameTooltip:AddLine("Log console and live profession recipe audit.", 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine("Also: /ac debug", 0.55, 0.55, 0.55)
+        GameTooltip:Show()
+    end)
+    debugBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    frame.debugBtn = debugBtn
+
     -- Artisan's Progress (account heatmap) — related to all profession tabs
     local progressBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     progressBtn:SetSize(130, 22)
-    progressBtn:SetPoint("TOPRIGHT", close, "TOPLEFT", -6, -6)
+    progressBtn:SetPoint("TOPRIGHT", debugBtn, "TOPLEFT", -6, 0)
     progressBtn:SetText("Artisan's Progress")
     progressBtn:SetScript("OnClick", function()
         if private.Progress and private.Progress.Toggle then
@@ -1181,14 +1213,24 @@ function addon:CreateMinimapButton()
     local y = math.sin(math.rad(angle)) * 80
     button:SetPoint("CENTER", Minimap, "CENTER", x, y)
 
-    button:SetScript("OnClick", function()
-        addon:ToggleMainFrame()
+    button:RegisterForClicks("AnyUp")
+    button:SetScript("OnClick", function(_, mouseButton)
+        if mouseButton == "RightButton" then
+            if private.Debug and private.Debug.Toggle then
+                private.Debug:Toggle()
+            else
+                private:Print("Debug module not loaded.")
+            end
+        else
+            addon:ToggleMainFrame()
+        end
     end)
 
     button:SetScript("OnEnter", function(btn)
         GameTooltip:SetOwner(btn, "ANCHOR_LEFT")
         GameTooltip:AddLine("|cffFFD700Artisan's Codex|r")
-        GameTooltip:AddLine("Click to open", 1, 1, 1)
+        GameTooltip:AddLine("Left-click: open main window", 1, 1, 1)
+        GameTooltip:AddLine("Right-click: debug panel", 0.75, 0.85, 1)
         GameTooltip:Show()
     end)
 

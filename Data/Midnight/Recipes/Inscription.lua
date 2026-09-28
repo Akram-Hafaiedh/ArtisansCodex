@@ -25,9 +25,10 @@ private.RecipeCategoryTips.Inscription = {
 private.RecipeData.Inscription = {
   -- ========== Reagents ==========
   { name = [[Sienna Ink]], spellID = 1230016, itemID = 245805, skill = 10, source = [[Trainer]], category = [[Reagents]] },
-  { name = [[Munsell Ink]], spellID = 1230017, itemID = 245802, skill = 15, source = [[Trainer]], category = [[Reagents]] },
+  { name = [[Munsell Ink]], spellID = 1230017, itemID = 245801, skill = 15, source = [[Trainer]], category = [[Reagents]], reagents = {{name="Thalassian Songwater",itemID=245882,amount=3},{name="Powder Pigment",itemID=245807,amount=20},{name="Sanguithorn Pigment",itemID=245865,amount=10},{name="Mana Lily Pigment",itemID=245867,amount=5},{name="Apprentice's Scribbles",itemID=246447,amount=1}} },
   { name = [[Codified Azeroot]], spellID = 1230018, itemID = 245764, skill = 25, source = [[Trainer]], category = [[Reagents]] },
   { name = [[Soul Cipher]], spellID = 1230019, itemID = 245766, skill = 20, source = [[Trainer]], category = [[Reagents]] },
+  { name = [[Midnight Milling]], spellID = 1269575, itemID = 262908, skill = 1, source = [[Trainer]], category = [[Reagents]], note = [[Mill herbs → pigments]] },
 
   -- ========== Weapons ==========
   { name = [[Faunatender's Baton]], spellID = 1230055, itemID = 245773, skill = 20, source = [[Trainer]], category = [[Weapons]], note = [[Staff]] },
@@ -49,14 +50,14 @@ private.RecipeData.Inscription = {
   { name = [[Thalassian Competitor's Bow]], spellID = 1260760, itemID = 245869, skill = 0, source = [[Vendor: Mirvedon (Silvermoon)]], category = [[PvP]], note = [[Bow]] },
 
   -- ========== Mysteries (Inscribe / Transcribe) ==========
-  { name = [[Inscribe: Blood]], spellID = 1230085, itemID = 245856, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Random Blood card]] },
-  { name = [[Transcribe: Blood]], spellID = 1230084, itemID = 245856, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Reroll into Blood card]] },
-  { name = [[Inscribe: Rot]], spellID = 1230081, itemID = 245847, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Random Rot card]] },
-  { name = [[Transcribe: Rot]], spellID = 1230080, itemID = 245847, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Reroll into Rot card]] },
-  { name = [[Inscribe: Hunt]], spellID = 1230083, itemID = 245830, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Random Hunt card]] },
-  { name = [[Transcribe: Hunt]], spellID = 1230082, itemID = 245830, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Reroll into Hunt card]] },
-  { name = [[Inscribe: Void]], spellID = 1230079, itemID = 245838, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Random Void card]] },
-  { name = [[Transcribe: Void]], spellID = 1230078, itemID = 245838, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Reroll into Void card]] },
+  { name = [[Inscribe: Blood]], spellID = 1230085, itemID = 251919, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Random Blood card]] },
+  { name = [[Transcribe: Blood]], spellID = 1230084, itemID = 245810, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Reroll into Blood card]], reagents = {{name="Thalassian Essence of the Faire",itemID=251923,amount=1}} },
+  { name = [[Inscribe: Rot]], spellID = 1230081, itemID = 251920, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Random Rot card]] },
+  { name = [[Transcribe: Rot]], spellID = 1230080, itemID = 245811, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Reroll into Rot card]], reagents = {{name="Thalassian Essence of the Faire",itemID=251923,amount=1}} },
+  { name = [[Inscribe: Hunt]], spellID = 1230083, itemID = 251921, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Random Hunt card]] },
+  { name = [[Transcribe: Hunt]], spellID = 1230082, itemID = 245812, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Reroll into Hunt card]], reagents = {{name="Thalassian Essence of the Faire",itemID=251923,amount=1}} },
+  { name = [[Inscribe: Void]], spellID = 1230079, itemID = 251922, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Random Void card]] },
+  { name = [[Transcribe: Void]], spellID = 1230078, itemID = 245813, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Mysteries]], note = [[Reroll into Void card]], reagents = {{name="Thalassian Essence of the Faire",itemID=251923,amount=1}} },
 
   -- ========== Darkmoon (Dominion trinkets) ==========
   { name = [[Darkmoon Dominion: Blood]], spellID = 1230070, itemID = 246305, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Darkmoon]], note = [[ilvl 220 trinket]] },
@@ -65,16 +66,17 @@ private.RecipeData.Inscription = {
   { name = [[Darkmoon Dominion: Void]], spellID = 1230073, itemID = 246307, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Darkmoon]], note = [[ilvl 220 trinket]] },
 
   -- ========== Sigils ==========
-  { name = [[Darkmoon Sigil: Blood]], spellID = 1230074, itemID = 245872, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Sigils]] },
+  { name = [[Darkmoon Sigil: Blood]], spellID = 1230074, itemID = 245871, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Sigils]], reagents = {{name="Thalassian Songwater",itemID=245882,amount=1},{name="Mote of Light",itemID=236949,amount=10},{name="Darkmoon Deck: Blood",itemID=245855,amount=1},{name="Soul Cipher",itemID=245766,amount=5},{name="Apprentice's Scribbles",itemID=246447,amount=1}} },
   { name = [[Darkmoon Sigil: Rot]], spellID = 1230075, itemID = 245877, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Sigils]] },
   { name = [[Darkmoon Sigil: Hunt]], spellID = 1230076, itemID = 245875, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Sigils]] },
-  { name = [[Darkmoon Sigil: Void]], spellID = 1230077, itemID = 245874, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Sigils]] },
+  { name = [[Darkmoon Sigil: Void]], spellID = 1230077, itemID = 245873, skill = 0, source = [[Spec: Darkmoon Curiosity]], category = [[Sigils]], reagents = {{name="Thalassian Songwater",itemID=245882,amount=1},{name="Mote of Pure Void",itemID=236952,amount=10},{name="Darkmoon Deck: Void",itemID=245750,amount=1},{name="Soul Cipher",itemID=245766,amount=5},{name="Apprentice's Scribbles",itemID=246447,amount=1}} },
 
   -- ========== Contracts ==========
   { name = [[Contract: The Silvermoon Court]], spellID = 1230051, itemID = 245799, skill = 0, source = [[Vendor: Caeris Fairdawn (Renown 5)]], category = [[Contracts]] },
   { name = [[Contract: The Amani Tribe]], spellID = 1230052, itemID = 245797, skill = 0, source = [[Vendor: Magovu (Renown 5)]], category = [[Contracts]] },
-  { name = [[Contract: The Hara'ti]], spellID = 1230053, itemID = 245796, skill = 0, source = [[Vendor: Naynar (Renown 5)]], category = [[Contracts]] },
-  { name = [[Contract: The Singularity]], spellID = 1230054, itemID = 245794, skill = 0, source = [[Vendor: Void Researcher Anomander (Renown 5)]], category = [[Contracts]] },
+  { name = [[Contract: The Hara'ti]], spellID = 1230053, itemID = 245795, skill = 0, source = [[Vendor: Naynar (Renown 5)]], category = [[Contracts]], reagents = {{name="Lexicologist's Vellum",itemID=245881,amount=1},{name="Mote of Primal Energy",itemID=236950,amount=3},{name="Munsell Ink",itemID=245801,amount=1},{name="Sienna Ink",itemID=245805,amount=1},{name="Apprentice's Scribbles",itemID=246447,amount=1}} },
+  { name = [[Contract: The Singularity]], spellID = 1230054, itemID = 245793, skill = 0, source = [[Vendor: Void Researcher Anomander (Renown 5)]], category = [[Contracts]], reagents = {{name="Lexicologist's Vellum",itemID=245881,amount=1},{name="Mote of Pure Void",itemID=236952,amount=3},{name="Munsell Ink",itemID=245801,amount=1},{name="Sienna Ink",itemID=245805,amount=1},{name="Apprentice's Scribbles",itemID=246447,amount=1}} },
+  { name = [[Contract: Zul'jarra's Forces]], spellID = 1303151, itemID = 277968, skill = 0, source = [[Vendor]], category = [[Contracts]], reagents = {{name="Lexicologist's Vellum",itemID=245881,amount=1},{name="Neutralized Venom Clot",itemID=274777,amount=3},{name="Munsell Ink",itemID=245801,amount=1},{name="Sienna Ink",itemID=245805,amount=1},{name="Apprentice's Scribbles",itemID=246447,amount=1}} },
 
   -- ========== Treatises ==========
   { name = [[Thalassian Treatise on Blacksmithing]], spellID = 1230026, itemID = 245763, skill = 0, source = [[Discovery: Crafting Treatises]], category = [[Treatises]] },
@@ -90,22 +92,23 @@ private.RecipeData.Inscription = {
   { name = [[Thalassian Treatise on Engineering]], spellID = 1230036, itemID = 245809, skill = 0, source = [[Discovery: Crafting Treatises]], category = [[Treatises]] },
 
   -- ========== Missives ==========
-  { name = [[Thalassian Missive of the Quickblade]], spellID = 1230037, itemID = 245792, skill = 45, source = [[Trainer]], category = [[Missives]], note = [[Haste + Vers]] },
+  { name = [[Thalassian Missive of the Quickblade]], spellID = 1230037, itemID = 245791, skill = 45, source = [[Trainer]], category = [[Missives]], note = [[Haste + Vers]], reagents = {{name="Lexicologist's Vellum",itemID=245881,amount=1},{name="Mote of Pure Void",itemID=236952,amount=1},{name="Munsell Ink",itemID=245801,amount=2},{name="Sienna Ink",itemID=245805,amount=2},{name="Apprentice's Scribbles",itemID=246447,amount=1}} },
   { name = [[Thalassian Missive of the Peerless]], spellID = 1230038, itemID = 245789, skill = 45, source = [[Trainer]], category = [[Missives]], note = [[Crit + Mastery]] },
-  { name = [[Thalassian Missive of the Harmonious]], spellID = 1230039, itemID = 245788, skill = 35, source = [[Trainer]], category = [[Missives]], note = [[Mastery + Vers]] },
+  { name = [[Thalassian Missive of the Harmonious]], spellID = 1230039, itemID = 245787, skill = 35, source = [[Trainer]], category = [[Missives]], note = [[Mastery + Vers]], reagents = {{name="Lexicologist's Vellum",itemID=245881,amount=1},{name="Mote of Pure Void",itemID=236952,amount=1},{name="Munsell Ink",itemID=245801,amount=2},{name="Sienna Ink",itemID=245805,amount=2},{name="Apprentice's Scribbles",itemID=246447,amount=1}} },
   { name = [[Thalassian Missive of the Fireflash]], spellID = 1230040, itemID = 245785, skill = 35, source = [[Trainer]], category = [[Missives]], note = [[Crit + Haste]] },
   { name = [[Thalassian Missive of the Feverflare]], spellID = 1230041, itemID = 245783, skill = 25, source = [[Trainer]], category = [[Missives]], note = [[Haste + Mastery]] },
   { name = [[Thalassian Missive of the Aurora]], spellID = 1230042, itemID = 245781, skill = 25, source = [[Trainer]], category = [[Missives]], note = [[Crit + Vers]] },
-  { name = [[Thalassian Missive of Deftness]], spellID = 1230043, itemID = 245827, skill = 0, source = [[Vendor: Lelorian (Silvermoon)]], category = [[Missives]], note = [[Profession]] },
+  { name = [[Thalassian Missive of Deftness]], spellID = 1230043, itemID = 245826, skill = 0, source = [[Vendor: Lelorian (Silvermoon)]], category = [[Missives]], note = [[Profession]], reagents = {{name="Lexicologist's Vellum",itemID=245881,amount=1},{name="Mote of Wild Magic",itemID=236951,amount=1},{name="Munsell Ink",itemID=245801,amount=2},{name="Sienna Ink",itemID=245805,amount=2},{name="Apprentice's Scribbles",itemID=246447,amount=1}} },
   { name = [[Thalassian Missive of Perception]], spellID = 1230044, itemID = 245824, skill = 0, source = [[Vendor: Lelorian (Silvermoon)]], category = [[Missives]], note = [[Profession]] },
   { name = [[Thalassian Missive of Finesse]], spellID = 1230045, itemID = 245822, skill = 0, source = [[Vendor: Lelorian (Silvermoon)]], category = [[Missives]], note = [[Profession]] },
-  { name = [[Thalassian Missive of Crafting Speed]], spellID = 1230046, itemID = 245821, skill = 0, source = [[Vendor: Lelorian (Silvermoon)]], category = [[Missives]], note = [[Profession]] },
-  { name = [[Thalassian Missive of Multicraft]], spellID = 1230047, itemID = 245819, skill = 0, source = [[Vendor: Lelorian (Silvermoon)]], category = [[Missives]], note = [[Profession]] },
+  { name = [[Thalassian Missive of Crafting Speed]], spellID = 1230046, itemID = 245820, skill = 0, source = [[Vendor: Lelorian (Silvermoon)]], category = [[Missives]], note = [[Profession]], reagents = {{name="Lexicologist's Vellum",itemID=245881,amount=1},{name="Mote of Wild Magic",itemID=236951,amount=1},{name="Munsell Ink",itemID=245801,amount=2},{name="Sienna Ink",itemID=245805,amount=2},{name="Apprentice's Scribbles",itemID=246447,amount=1}} },
+  { name = [[Thalassian Missive of Multicraft]], spellID = 1230047, itemID = 245818, skill = 0, source = [[Vendor: Lelorian (Silvermoon)]], category = [[Missives]], note = [[Profession]], reagents = {{name="Lexicologist's Vellum",itemID=245881,amount=1},{name="Mote of Light",itemID=236949,amount=1},{name="Munsell Ink",itemID=245801,amount=2},{name="Sienna Ink",itemID=245805,amount=2},{name="Apprentice's Scribbles",itemID=246447,amount=1}} },
   { name = [[Thalassian Missive of Resourcefulness]], spellID = 1230048, itemID = 245816, skill = 0, source = [[Vendor: Lelorian (Silvermoon)]], category = [[Missives]], note = [[Profession]] },
   { name = [[Thalassian Missive of Ingenuity]], spellID = 1230049, itemID = 245814, skill = 0, source = [[Vendor: Lelorian (Silvermoon)]], category = [[Missives]], note = [[Profession]] },
 
   -- ========== Vantus ==========
   { name = [[Vantus Rune: Radiant]], spellID = 1230050, itemID = 245879, skill = 50, source = [[Trainer]], category = [[Vantus]] },
+  { name = [[Vantus Rune: Tides]], spellID = 1290561, itemID = 272194, skill = 0, source = [[Trainer]], category = [[Vantus]], reagents = {{name="Thalassian Songwater",itemID=245882,amount=1},{name="Lexicologist's Vellum",itemID=245881,amount=1},{name="Petrified Root",itemID=251285,amount=2},{name="Cursebound Globe",itemID=274781,amount=2},{name="Soul Cipher",itemID=245766,amount=1},{name="Apprentice's Scribbles",itemID=246447,amount=1},{name="Vantus Rune: Radiant",itemID=245879,amount=1}} },
 
   -- ========== Profession Gear ==========
   { name = [[Hobbyist Rolling Pin]], spellID = 1230020, itemID = 245779, skill = 0, source = [[Trainer]], category = [[Profession Gear]], note = [[Green · Cooking]] },
@@ -131,4 +134,6 @@ private.RecipeData.Inscription = {
   { name = [[Wild Hanging Scroll]], spellID = 1248628, itemID = 262601, skill = 0, source = [[Vendor: Construct V'anore (Silvermoon)]], category = [[House Decor]] },
   { name = [[Harandar Signpost]], spellID = 1248630, itemID = 253508, skill = 0, source = [[Vendor: Naynar (Renown 5)]], category = [[House Decor]] },
   { name = [[Magnificent Towering Bookcase]], spellID = 1248631, itemID = 263034, skill = 0, source = [[Vendor: Naynar (Renown 5)]], category = [[House Decor]] },
+  { name = [["Cursed Gaze of Ula'tek" Mural]], spellID = 1296505, itemID = 280752, skill = 0, source = [[Imported]], category = [[House Decor]], reagents = {{name="Thalassian Lumber",itemID=256963,amount=6},{name="Codified Azeroot",itemID=245764,amount=1},{name="Soul Cipher",itemID=245766,amount=2},{name="Resourceful Rebar",itemID=247725,amount=1}} },
+  { name = [[Chiseled Amani Tablet]], spellID = 1296506, itemID = 280757, skill = 0, source = [[Imported]], category = [[House Decor]], reagents = {{name="Thalassian Lumber",itemID=256963,amount=6},{name="Codified Azeroot",itemID=245764,amount=1},{name="Soul Cipher",itemID=245766,amount=2},{name="Resourceful Rebar",itemID=247725,amount=1}} },
 }

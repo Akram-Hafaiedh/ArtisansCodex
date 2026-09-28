@@ -68,3 +68,4 @@ Modules/Leveling.lua
 Modules/Specializations.lua
 Modules/Knowledge.lua
 Modules/Recipes.lua
+Modules/Debug.lua
