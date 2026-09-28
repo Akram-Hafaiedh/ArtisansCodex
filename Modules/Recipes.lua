@@ -15,6 +15,88 @@ local function GetRecipeList(profName)
     return data
 end
 
+-- Category tips live in each profession's recipe data file:
+--   private.RecipeCategoryTips[profName] = { ["Armor"] = "…", … }
+local function GetCategoryTip(profName, category)
+    if not profName or not category then return nil end
+    local byProf = private.RecipeCategoryTips and private.RecipeCategoryTips[profName]
+    if type(byProf) ~= "table" then return nil end
+    local tip = byProf[category]
+    if type(tip) == "string" and tip ~= "" then return tip end
+    return nil
+end
+
+-- ============================================================
+-- Source actions: Spec → Specializations tab, Vendor/Trainer → map pin
+-- ============================================================
+
+local function PinCoords(mapID, x, y, label)
+    if not mapID or not x or not y then
+        private:Print("No coordinates available" .. (label and (" for " .. label) or "") .. ".")
+        return
+    end
+    C_Map.SetUserWaypoint({
+        uiMapID = mapID,
+        position = CreateVector2D(x / 100, y / 100),
+    })
+    if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then
+        C_SuperTrack.SetSuperTrackedUserWaypoint(true)
+    end
+    if label then
+        private:Print("Pinned |cffFFD700" .. label .. "|r on the map.")
+    end
+end
+
+-- Parse free-form source strings used in recipe data.
+-- Returns: sourceType ("spec"|"vendor"|"trainer"|"drop"|"quest"|"other"), detail
+local function ParseSource(source)
+    if type(source) ~= "string" or source == "" then
+        return "other", nil
+    end
+    local spec = source:match("^[Ss]pec:%s*(.+)$")
+    if spec then return "spec", strtrim(spec) end
+    local vendor = source:match("^[Vv]endor:%s*(.+)$")
+    if vendor then
+        -- "Deynna (150 Moxie)" → "Deynna"
+        local name = vendor:match("^([^(]+)")
+        return "vendor", strtrim(name or vendor)
+    end
+    if source:match("^[Tt]rainer") then
+        return "trainer", source:match("^[Tt]rainer:%s*(.+)$") or source
+    end
+    local drop = source:match("^[Dd]rop:%s*(.+)$")
+    if drop then return "drop", strtrim(drop) end
+    local quest = source:match("^[Qq]uest:%s*(.+)$")
+    if quest then return "quest", strtrim(quest) end
+    return "other", source
+end
+
+-- Resolve pin target for a recipe entry.
+-- Priority: entry.mapID/x/y → leveling trainer coords (for Trainer sources).
+local function GetPinTarget(entry, profName, sourceType)
+    if entry.mapID and entry.x and entry.y then
+        local label = entry.pinLabel
+            or (entry.source and entry.source:match("^[Vv]endor:%s*([^(]+)") and strtrim(entry.source:match("^[Vv]endor:%s*([^(]+)")))
+            or entry.name
+            or "Location"
+        return entry.mapID, entry.x, entry.y, strtrim(label)
+    end
+    if sourceType == "trainer" and profName then
+        local pdata = private.Data and private.Data[profName]
+        local trainer = pdata and pdata.trainer
+        if trainer and trainer.mapID and trainer.x and trainer.y then
+            return trainer.mapID, trainer.x, trainer.y, trainer.name or (profName .. " Trainer")
+        end
+    end
+    return nil
+end
+
+local function OpenSpecializations(profName)
+    if not addon or not addon.SelectTab then return end
+    addon.selectedSpecProf = profName
+    addon:SelectTab("specializations")
+end
+
 -- ============================================================
 -- Learned tracking (persisted to ArtisansCodexDB)
 -- Scans automatically whenever the profession window opens / updates.
@@ -495,7 +577,18 @@ function addon:BuildRecipes()
             local catFS = list:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             catFS:SetPoint("TOPLEFT", 4, y)
             catFS:SetText("|cffFFD700" .. lastCat .. "|r")
-            y = y - 18
+            y = y - 16
+            local tip = GetCategoryTip(profName, lastCat)
+            if tip then
+                local tipFS = list:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                tipFS:SetPoint("TOPLEFT", 6, y)
+                tipFS:SetPoint("RIGHT", list, "RIGHT", -8, 0)
+                tipFS:SetJustifyH("LEFT")
+                tipFS:SetTextColor(0.55, 0.55, 0.58)
+                tipFS:SetText(tip)
+                y = y - 14
+            end
+            y = y - 4
         end
 
         local cell = CreateFrame("Button", nil, list, "BackdropTemplate")
@@ -535,50 +628,89 @@ function addon:BuildRecipes()
         nameFS:SetPoint("TOPLEFT", 48, -6)
         nameFS:SetPoint("RIGHT", -130, 0)
         nameFS:SetJustifyH("LEFT")
-        -- Prefer live in-game name (item first, then spell for enchants)
-        local displayName = entry.name or "?"
-        local qualityColor -- hex without leading |
-        if entry.itemID and entry.itemID > 0 then
-            local liveName = C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(entry.itemID)
-            if not liveName and GetItemInfo then
-                liveName = GetItemInfo(entry.itemID)
-            end
-            if liveName and liveName ~= "" then
-                displayName = liveName
-            end
-            -- Item quality color (poor/common/uncommon/rare/epic/legendary…)
-            local q
-            if C_Item and C_Item.GetItemQualityByID then
-                q = C_Item.GetItemQualityByID(entry.itemID)
-            end
-            if (not q or q < 0) and GetItemInfo then
-                local _, _, itemQuality = GetItemInfo(entry.itemID)
-                q = itemQuality
-            end
-            if type(q) == "number" and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[q] then
-                local c = ITEM_QUALITY_COLORS[q]
-                qualityColor = string.format("ff%02x%02x%02x",
-                    math.floor((c.r or 1) * 255),
-                    math.floor((c.g or 1) * 255),
-                    math.floor((c.b or 1) * 255))
-            end
-        elseif entry.spellID and entry.spellID > 0 then
-            local liveName
-            if C_Spell and C_Spell.GetSpellName then
-                liveName = C_Spell.GetSpellName(entry.spellID)
-            elseif GetSpellInfo then
-                liveName = GetSpellInfo(entry.spellID)
-            end
-            if liveName and liveName ~= "" then
-                displayName = liveName
+
+        -- Display name: ALWAYS use data-file name when present.
+        -- itemID is icon + quality only (never overwrites the label).
+        local displayName = (entry.name and entry.name ~= "" and entry.name) or nil
+        if not displayName then
+            if entry.itemID and entry.itemID > 0 then
+                local liveName = C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(entry.itemID)
+                if (not liveName or liveName == "") and GetItemInfo then
+                    liveName = GetItemInfo(entry.itemID)
+                end
+                displayName = (liveName and liveName ~= "" and liveName) or "?"
+            elseif entry.spellID and entry.spellID > 0 then
+                local liveName
+                if C_Spell and C_Spell.GetSpellName then
+                    liveName = C_Spell.GetSpellName(entry.spellID)
+                elseif GetSpellInfo then
+                    liveName = GetSpellInfo(entry.spellID)
+                end
+                displayName = (liveName and liveName ~= "" and liveName) or "?"
+            else
+                displayName = "?"
             end
         end
-        -- Quality color on the name; learned status still shown in the meta line
-        local nameColor = qualityColor
-            or (learned == true and "ff33ee66")
-            or (learned == false and "ffffcc66")
-            or "ffaaaaaa"
-        nameFS:SetText("|" .. nameColor .. displayName .. "|r")
+        nameFS:SetText(displayName)
+        -- Lock the label so async item-load callbacks cannot replace it.
+        nameFS._acLockedName = displayName
+
+        -- Quality color via SetTextColor (no |c escapes). Live API only — no quality in data.
+        -- Fallback tint: learned green / missing gold / unscanned gray.
+        local function ApplyNameColor(quality)
+            if type(quality) == "number" then
+                local r, g, b
+                if GetItemQualityColor then
+                    r, g, b = GetItemQualityColor(quality)
+                elseif ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality] then
+                    local c = ITEM_QUALITY_COLORS[quality]
+                    r, g, b = c.r, c.g, c.b
+                end
+                if r then
+                    nameFS:SetTextColor(r, g, b)
+                    return
+                end
+            end
+            if learned == true then
+                nameFS:SetTextColor(0.20, 0.93, 0.40)
+            elseif learned == false then
+                nameFS:SetTextColor(1.00, 0.80, 0.40)
+            else
+                nameFS:SetTextColor(0.67, 0.67, 0.67)
+            end
+        end
+
+        local quality
+        if entry.itemID and entry.itemID > 0 then
+            if C_Item and C_Item.GetItemQualityByID then
+                quality = C_Item.GetItemQualityByID(entry.itemID)
+            end
+            if quality == nil and GetItemInfo then
+                quality = select(3, GetItemInfo(entry.itemID))
+            end
+            -- Kick the item into cache; recolor when the client finishes loading it
+            if C_Item and C_Item.RequestLoadItemDataByID then
+                C_Item.RequestLoadItemDataByID(entry.itemID)
+            end
+            if Item and Item.CreateFromItemID then
+                local itemObj = Item:CreateFromItemID(entry.itemID)
+                if itemObj and itemObj.ContinueOnItemLoad then
+                    itemObj:ContinueOnItemLoad(function()
+                        if not nameFS or not nameFS.SetTextColor then return end
+                        -- Keep locked data-file name (Inscribe/Transcribe etc.)
+                        if nameFS._acLockedName then
+                            nameFS:SetText(nameFS._acLockedName)
+                        end
+                        local q = itemObj.GetItemQuality and itemObj:GetItemQuality() or nil
+                        if q == nil and C_Item and C_Item.GetItemQualityByID then
+                            q = C_Item.GetItemQualityByID(entry.itemID)
+                        end
+                        ApplyNameColor(q)
+                    end)
+                end
+            end
+        end
+        ApplyNameColor(quality)
 
         local meta = cell:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         meta:SetPoint("TOPLEFT", 48, -22)
@@ -617,9 +749,54 @@ function addon:BuildRecipes()
         end
         meta:SetText(table.concat(bits, "  ·  "))
 
-        -- Source on the right (materials stay in tooltip on hover)
+        -- Source + action buttons (Specs / Pin) on the right
+        local sourceType, sourceDetail = ParseSource(entry.source)
+        local pinMapID, pinX, pinY, pinLabel = GetPinTarget(entry, profName, sourceType)
+        local canPin = pinMapID ~= nil
+        local isSpec = sourceType == "spec"
+
+        local actionX = -8
+        if canPin then
+            local pinBtn = CreateFrame("Button", nil, cell, "UIPanelButtonTemplate")
+            pinBtn:SetSize(40, 18)
+            pinBtn:SetPoint("TOPRIGHT", actionX, -4)
+            pinBtn:SetText("Pin")
+            pinBtn:SetScript("OnClick", function()
+                PinCoords(pinMapID, pinX, pinY, pinLabel)
+            end)
+            pinBtn:SetScript("OnEnter", function(btn)
+                GameTooltip:SetOwner(btn, "ANCHOR_LEFT")
+                GameTooltip:AddLine("Pin on map", 1, 0.85, 0.2)
+                if pinLabel then
+                    GameTooltip:AddLine(pinLabel, 0.8, 0.8, 0.8)
+                end
+                GameTooltip:Show()
+            end)
+            pinBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+            actionX = actionX - 44
+        end
+        if isSpec then
+            local specBtn = CreateFrame("Button", nil, cell, "UIPanelButtonTemplate")
+            specBtn:SetSize(48, 18)
+            specBtn:SetPoint("TOPRIGHT", actionX, -4)
+            specBtn:SetText("Specs")
+            specBtn:SetScript("OnClick", function()
+                OpenSpecializations(profName)
+            end)
+            specBtn:SetScript("OnEnter", function(btn)
+                GameTooltip:SetOwner(btn, "ANCHOR_LEFT")
+                GameTooltip:AddLine("Open Specializations", 1, 0.85, 0.2)
+                if sourceDetail then
+                    GameTooltip:AddLine(sourceDetail, 0.8, 0.8, 0.8)
+                end
+                GameTooltip:Show()
+            end)
+            specBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+            actionX = actionX - 52
+        end
+
         local srcFS = cell:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        srcFS:SetPoint("TOPRIGHT", -8, -6)
+        srcFS:SetPoint("TOPRIGHT", actionX - 4, -6)
         srcFS:SetJustifyH("RIGHT")
         srcFS:SetTextColor(0.75, 0.72, 0.55)
         if entry.source and entry.source ~= "" then
@@ -627,6 +804,9 @@ function addon:BuildRecipes()
         else
             srcFS:SetText("")
         end
+        -- Keep name/meta from overlapping action buttons
+        nameFS:SetPoint("RIGHT", srcFS, "LEFT", -8, 0)
+        meta:SetPoint("RIGHT", srcFS, "LEFT", -8, 0)
 
         cell:EnableMouse(true)
         cell:SetScript("OnEnter", function(selfBtn)
@@ -634,7 +814,6 @@ function addon:BuildRecipes()
             if entry.itemID and entry.itemID > 0 then
                 GameTooltip:SetItemByID(entry.itemID)
             elseif entry.spellID and entry.spellID > 0 then
-                -- Enchant recipes: show the spell tooltip (correct icon + description)
                 GameTooltip:SetSpellByID(entry.spellID)
             else
                 GameTooltip:AddLine(entry.name or "Recipe", 1, 0.85, 0.2)
@@ -658,6 +837,13 @@ function addon:BuildRecipes()
             end
             if entry.source then
                 GameTooltip:AddLine("Source: " .. entry.source, 0.6, 0.6, 0.6)
+            end
+            if isSpec then
+                GameTooltip:AddLine(" ", 1, 1, 1)
+                GameTooltip:AddLine("Click Specs to open Specializations for " .. (profName or "?"), 0.5, 0.75, 1)
+            end
+            if canPin then
+                GameTooltip:AddLine("Click Pin to mark " .. (pinLabel or "location") .. " on the map", 0.5, 0.75, 1)
             end
             GameTooltip:Show()
         end)

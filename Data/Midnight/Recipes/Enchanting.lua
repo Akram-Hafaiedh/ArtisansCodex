@@ -5,6 +5,25 @@
 
 local _, private = ...
 private.RecipeData = private.RecipeData or {}
+private.RecipeCategoryTips = private.RecipeCategoryTips or {}
+
+-- One-line tips shown under category headers in the Recipes tab.
+private.RecipeCategoryTips.Enchanting = {
+  ["Weapon"]      = [[Weapon enchants. Faction themes (Amani / Thalassian / Haranir).]],
+  ["Boots"]       = [[Boot enchants (speed, leech, avoidance, stamina).]],
+  ["Chest"]       = [[Chest enchants (primary stat and utility).]],
+  ["Helm"]        = [[Helm enchants (avoidance, leech, and empowered variants).]],
+  ["Rings"]       = [[Ring enchants.]],
+  ["Shoulders"]   = [[Shoulder enchants.]],
+  ["Oils"]        = [[Temporary weapon oils.]],
+  ["Rods"]        = [[Enchanting rods (profession tool).]],
+  ["Wands"]       = [[Crafted wands.]],
+  ["Illusions"]   = [[Weapon enchant visual illusions.]],
+  ["Glamours"]    = [[Cosmetic enchant appearances.]],
+  ["Shattering"]  = [[Disenchant / shatter related crafts.]],
+  ["Tools"]       = [[Profession tools.]],
+  ["House Decor"] = [[Housing cosmetics. Some are renown-gated.]],
+}
 
 private.RecipeData.Enchanting = {
   -- ========== Weapon Enchants ==========
