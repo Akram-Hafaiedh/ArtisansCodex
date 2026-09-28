@@ -87,12 +87,33 @@ end
 -- GetProfessions() only reflects the logged-in character, so a profession
 -- can be a valid guide topic in the addon's data without being learned.
 function addon:GetLearnedSkillLineID(professionName)
-    local prof1, prof2 = GetProfessions()
-    for _, idx in ipairs({ prof1, prof2 }) do
+    if type(professionName) ~= "string" or professionName == "" then
+        return nil
+    end
+    -- GetProfessions() returns primary1, primary2, archaeology, fishing, cooking
+    -- Cooking and Fishing are secondary slots — must not skip them.
+    local p1, p2, archaeology, fishing, cooking = GetProfessions()
+    for _, idx in ipairs({ p1, p2, archaeology, fishing, cooking }) do
         if idx then
             local name, _, _, _, _, _, skillLine = GetProfessionInfo(idx)
             if name == professionName then
                 return skillLine
+            end
+            -- Skill line labels can be expansion-prefixed (e.g. "Midnight Cooking")
+            if type(name) == "string" then
+                local bare = name:match("Midnight%s+(.+)$")
+                    or name:match("Khaz Algar%s+(.+)$")
+                    or name:match("Dragon Isles%s+(.+)$")
+                if bare and bare == professionName then
+                    return skillLine
+                end
+                if name:find(professionName, 1, true) and (
+                    professionName == "Cooking"
+                    or professionName == "Fishing"
+                    or professionName == "Archaeology"
+                ) then
+                    return skillLine
+                end
             end
         end
     end
@@ -430,17 +451,27 @@ local function IsQuestComplete(questID)
 end
 
 --- Profession skill levels for the logged-in character (names must match Data keys).
+--- Includes secondary professions (Cooking, Fishing, Archaeology).
 function addon:ScanProfessionSkills()
     local char = self:GetCharacterSnapshot()
     if not char then return end
 
-    local prof1, prof2 = GetProfessions()
-    for _, idx in ipairs({ prof1, prof2 }) do
+    local function bareName(name)
+        if type(name) ~= "string" then return name end
+        return name:match("Midnight%s+(.+)$")
+            or name:match("Khaz Algar%s+(.+)$")
+            or name:match("Dragon Isles%s+(.+)$")
+            or name
+    end
+
+    local p1, p2, archaeology, fishing, cooking = GetProfessions()
+    for _, idx in ipairs({ p1, p2, archaeology, fishing, cooking }) do
         if idx then
             local name, _, skillLevel, maxSkill, _, _, skillLine = GetProfessionInfo(idx)
             if name then
-                local snap = EnsureProfSnap(char, name, skillLine)
-                snap.name = name
+                local key = bareName(name)
+                local snap = EnsureProfSnap(char, key, skillLine)
+                snap.name = key
                 snap.skillLineID = skillLine
                 snap.skillLevel = skillLevel or 0
                 snap.skillMaxLevel = maxSkill or 0

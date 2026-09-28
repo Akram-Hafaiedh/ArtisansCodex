@@ -8,7 +8,7 @@ local Debug = private.Debug
 local addon = private.addon
 
 local LOG_MAX = 400
-local FILTERS = { "All", "Missing", "Mismatch", "Extra", "NoID", "OK" }
+local FILTERS = { "All", "Missing", "Mismatch", "Extra", "NoID", "NoSource", "OK" }
 
 -- Ring buffer of { t = time, cat = string, msg = string }
 Debug.log = Debug.log or {}
@@ -370,6 +370,58 @@ local function IndexCatalog(profName)
     return bySpell, byName, byItem, rows
 end
 
+
+-- Source is editorial (how the player learns the recipe). The live profession
+-- API does not expose Trainer/Vendor/Spec, so we only validate catalog rows.
+local PLACEHOLDER_SOURCES = {
+    [""] = true,
+    ["imported"] = true,
+    ["guide"] = true,
+    ["?"] = true,
+    ["unknown"] = true,
+}
+
+local function NormalizeSource(src)
+    if type(src) ~= "string" then return "" end
+    return strtrim(src)
+end
+
+local function IsPlaceholderSource(src)
+    src = NormalizeSource(src)
+    if src == "" then return true end
+    return PLACEHOLDER_SOURCES[strlower(src)] == true
+end
+
+-- Matches Recipes.lua ParseSource prefixes (+ Gather / Patch used in data)
+local function IsKnownSourceFormat(src)
+    src = NormalizeSource(src)
+    if src == "" then return false end
+    if src:match("^[Tt]rainer") then return true end
+    if src:match("^[Vv]endor") then return true end
+    if src:match("^[Ss]pec:") then return true end
+    if src:match("^[Dd]rop:") then return true end
+    if src:match("^[Qq]uest:") then return true end
+    if src:match("^[Gg]ather:") then return true end
+    if src:match("^[Pp]atch") then return true end
+    return false
+end
+
+local function CollectSourceIssues(cat)
+    local issues = {}
+    if type(cat) ~= "table" then
+        return issues
+    end
+    local src = NormalizeSource(cat.source)
+    if src == "" then
+        issues[#issues + 1] = "catalog missing source"
+    elseif IsPlaceholderSource(src) then
+        issues[#issues + 1] = "placeholder source: " .. src
+    elseif not IsKnownSourceFormat(src) then
+        issues[#issues + 1] = "source format: " .. src
+    end
+    return issues
+end
+
 function Debug:BuildDiff(profName, liveList)
     local bySpell, byName, byItem, catalogRows = IndexCatalog(profName)
     local matched = {}
@@ -412,21 +464,68 @@ function Debug:BuildDiff(profName, liveList)
                     issues[#issues + 1] = string.format("category data=%s live=%s", cat.category, live.categoryName)
                 end
             end
+            -- Editorial learn-source (not available from live API)
+            for _, siss in ipairs(CollectSourceIssues(cat)) do
+                issues[#issues + 1] = siss
+            end
             local status = (#issues == 0) and "OK" or "Mismatch"
-            -- Pure category-only notes should not force Mismatch (IDs still correct)
-            if status == "Mismatch" and #issues == 1 and issues[1]:find("^category ", 1) then
-                status = "OK" -- keep OK; still show note in meta/tooltip via issues
+            -- Soft-only notes (category / source) should not force hard Mismatch
+            if status == "Mismatch" then
+                local hard = 0
+                local onlySource = true
+                for _, iss in ipairs(issues) do
+                    if iss:find("^category ", 1)
+                        or iss:find("^catalog missing source", 1)
+                        or iss:find("^placeholder source", 1)
+                        or iss:find("^source format", 1)
+                    then
+                        -- soft
+                    else
+                        hard = hard + 1
+                        onlySource = false
+                    end
+                end
+                if hard == 0 then
+                    -- Source problems get their own filterable status
+                    local hasSourceIssue = false
+                    for _, iss in ipairs(issues) do
+                        if iss:find("^catalog missing source", 1)
+                            or iss:find("^placeholder source", 1)
+                            or iss:find("^source format", 1)
+                        then
+                            hasSourceIssue = true
+                            break
+                        end
+                    end
+                    if hasSourceIssue then
+                        status = "NoSource"
+                    else
+                        status = "OK" -- category-only soft note
+                    end
+                end
             end
             if (cat.itemID or 0) == 0 and (live.itemID or 0) == 0 then
-                -- enchants etc. — still OK if spell matches
+                -- enchants etc. — IDs OK if spell matches; keep source soft-status
                 if cat.spellID and live.spellID and cat.spellID == live.spellID then
-                    -- preserve category soft-notes
-                    local soft = {}
-                    for _, iss in ipairs(issues) do
-                        if iss:find("^category ", 1) then soft[#soft + 1] = iss end
+                    if status == "Mismatch" then
+                        -- only drop hard ID issues; keep category/source notes
+                        local soft = {}
+                        local hasSourceIssue = false
+                        for _, iss in ipairs(issues) do
+                            if iss:find("^category ", 1)
+                                or iss:find("^catalog missing source", 1)
+                                or iss:find("^placeholder source", 1)
+                                or iss:find("^source format", 1)
+                            then
+                                soft[#soft + 1] = iss
+                                if not iss:find("^category ", 1) then
+                                    hasSourceIssue = true
+                                end
+                            end
+                        end
+                        issues = soft
+                        status = hasSourceIssue and "NoSource" or "OK"
                     end
-                    issues = soft
-                    status = "OK"
                 end
             end
             if (cat.itemID or 0) == 0 and (live.itemID or 0) > 0 then
@@ -469,7 +568,7 @@ function Debug:BuildDiff(profName, liveList)
     end
 
     table.sort(diffs, function(a, b)
-        local order = { Missing = 1, NoID = 2, Mismatch = 3, Extra = 4, OK = 5 }
+        local order = { Missing = 1, NoID = 2, Mismatch = 3, NoSource = 4, Extra = 5, OK = 6 }
         local oa, ob = order[a.status] or 9, order[b.status] or 9
         if oa ~= ob then return oa < ob end
         return (a.name or "") < (b.name or "")
@@ -486,10 +585,12 @@ local function FormatLuaEntry(live, catalog)
     local spellID = (live and live.spellID) or (catalog and catalog.spellID) or 0
     local itemID = (live and live.itemID) or (catalog and catalog.itemID) or 0
     local skill = (catalog and catalog.skill) or (live and live.skill) or 0
-    local source = (catalog and catalog.source) or "Imported"
-    local category = (catalog and catalog.category)
+    local source = (catalog and catalog.source and catalog.source ~= "" and catalog.source)
+        or ""
+    local category = (catalog and catalog.category and catalog.category ~= "")
+        and catalog.category
         or (live and live.categoryName)
-        or "Imported"
+        or ""
     local reagents = (live and live.reagents and #live.reagents > 0) and live.reagents
         or (catalog and catalog.reagents) or {}
 
@@ -505,7 +606,7 @@ local function FormatLuaEntry(live, catalog)
     local reagStr = #reagParts > 0 and ("{" .. table.concat(reagParts, ",") .. "}") or "{}"
 
     local flag = ""
-    if name == "?" or spellID == 0 then
+    if name == "?" or spellID == 0 or source == "" or IsPlaceholderSource(source) then
         flag = " -- NEEDS REVIEW"
     end
 
@@ -524,7 +625,7 @@ function Debug:ExportDiffs(diffs, onlyStatus)
     local needsReview = 0
     for _, d in ipairs(diffs) do
         if not onlyStatus or d.status == onlyStatus or onlyStatus == "All" then
-            if d.status == "Missing" or d.status == "NoID" or d.status == "Mismatch" then
+            if d.status == "Missing" or d.status == "NoID" or d.status == "Mismatch" or d.status == "NoSource" then
                 local line = FormatLuaEntry(d.live, d.catalog)
                 lines[#lines + 1] = line
                 n = n + 1
@@ -782,7 +883,7 @@ function Debug:BuildRecipesPanel()
 end
 
 local function CountDiffs(diffs)
-    local counts = { Missing = 0, Mismatch = 0, Extra = 0, NoID = 0, OK = 0 }
+    local counts = { Missing = 0, Mismatch = 0, Extra = 0, NoID = 0, NoSource = 0, OK = 0 }
     for _, d in ipairs(diffs or {}) do
         counts[d.status] = (counts[d.status] or 0) + 1
     end
@@ -816,15 +917,15 @@ function Debug:ApplyImportResult(profName, live, skillLineID, skillLineLabel, to
         suffix = suffix .. string.format(" |cffffcc44(%d reagent names still loading)|r", unresolved)
     end
     private:Print(string.format(
-        "Recipe audit |cffFFD700%s|r%s: filtered=%d / all=%d  missing=%d  mismatch=%d  noID=%d  extra=%d  ok=%d%s",
+        "Recipe audit |cffFFD700%s|r%s: filtered=%d / all=%d  missing=%d  mismatch=%d  noID=%d  noSrc=%d  extra=%d  ok=%d%s",
         profName, lineNote, #live, totalAll or 0,
-        counts.Missing, counts.Mismatch, counts.NoID, counts.Extra, counts.OK, suffix
+        counts.Missing, counts.Mismatch, counts.NoID, counts.NoSource or 0, counts.Extra, counts.OK, suffix
     ))
     if self.recipeStatusFS then
         self.recipeStatusFS:SetText(string.format(
-            "%s %s · %d/%d · |cffff8866%d miss|r · |cffffcc44%d mm|r · |cff88aaff%d noID|r · |cff888888%d extra|r · |cff66ee88%d ok|r%s",
+            "%s %s · %d/%d · |cffff8866%d miss|r · |cffffcc44%d mm|r · |cff88aaff%d noID|r · |cffffcc66%d src|r · |cff888888%d extra|r · |cff66ee88%d ok|r%s",
             profName, skillLineLabel or "?", #live, totalAll or 0,
-            counts.Missing, counts.Mismatch, counts.NoID, counts.Extra, counts.OK,
+            counts.Missing, counts.Mismatch, counts.NoID, counts.NoSource or 0, counts.Extra, counts.OK,
             unresolved > 0 and string.format(" · %d names…", unresolved) or ""
         ))
     end
@@ -950,7 +1051,7 @@ function Debug:DoExport()
 
     local text, n = self:ExportDiffs(self.lastDiffs, "All")
     if n == 0 then
-        private:Print("|cffffcc44Nothing to export|r (no Missing / Mismatch / NoID rows).")
+        private:Print("|cffffcc44Nothing to export|r (no Missing / Mismatch / NoID / NoSource rows).")
         if self.recipeStatusFS then
             self.recipeStatusFS:SetText("|cffffcc44Nothing to export.|r")
         end
@@ -977,6 +1078,7 @@ local STATUS_COLOR = {
     Mismatch = { 1.0, 0.75, 0.30 },
     Extra    = { 0.55, 0.55, 0.60 },
     NoID     = { 0.50, 0.70, 1.0 },
+    NoSource = { 1.00, 0.75, 0.35 },
     OK       = { 0.35, 0.85, 0.45 },
 }
 

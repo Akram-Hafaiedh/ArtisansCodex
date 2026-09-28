@@ -36,6 +36,7 @@ private.RecipeData.Enchanting = {
   { name = [[Enchant Weapon - Worldsoul Aegis]], spellID = 1236080, itemID = 0, skill = 55, source = [[Trainer]], category = [[Weapon]], note = [[Shield on damage taken · Haranir]] },
   { name = [[Enchant Weapon - Worldsoul Tenacity]], spellID = 1236081, itemID = 0, skill = 0, source = [[Vendor: Naynar (Renown)]], category = [[Weapon]], note = [[Vers + absorb · Haranir]] },
   { name = [[Enchant Weapon - Worldsoul Cradle]], spellID = 1236079, itemID = 0, skill = 0, source = [[Drop: Chimaerus (The Dreamrift)]], category = [[Weapon]], note = [[Heal absorb shield · Haranir]] },
+  { name = [[Enchant Weapon - Rite of the Hash'ey]], spellID = 1291694, itemID = 0, skill = 0, source = [[Patch 12.1]], category = [[Weapon]], reagents = {{name="Cursebound Globe",itemID=274781,amount=5},{name="Petrified Root",itemID=251285,amount=4},{name="Eversinging Dust",itemID=243599,amount=20},{name="Radiant Shard",itemID=243602,amount=10},{name="Dawn Crystal",itemID=243605,amount=2},{name="Flawless Amani Lapis",itemID=242612,amount=1}}, note = [[Patch 12.1]] },
 
   -- ========== Boot Enchants ==========
   { name = [[Enchant Boots - Lynx's Dexterity]], spellID = 1236057, itemID = 0, skill = 0, source = [[Spec: Amani Augments]], category = [[Boots]], note = [[+Avoidance, +Stamina · Amani]] },
@@ -84,12 +85,13 @@ private.RecipeData.Enchanting = {
   { name = [[Enchant Tool - Sin'dorei Deftness]], spellID = 1236092, itemID = 0, skill = 0, source = [[Spec: Thalassian Talents]], category = [[Tools]], note = [[+Deftness · Thalassian]] },
 
   -- ========== Oils / Consumables ==========
-  { name = [[Oil of Dawn]], spellID = 1236492, itemID = 243736, skill = 0, source = [[Spec: Transitories, Tonics, and Tools]], category = [[Oils]], note = [[Healer oil: chance to shield target]] },
-  { name = [[Smuggler's Enchanted Edge]], spellID = 1236493, itemID = 243738, skill = 0, source = [[Drop: Lithiel Cinderfury (Murder Row)]], category = [[Oils]], note = [[DPS oil: Arcane damage]] },
-  { name = [[Thalassian Phoenix Oil]], spellID = 1236491, itemID = 243734, skill = 20, source = [[Trainer]], category = [[Oils]], note = [[+Crit and +Haste]] },
+  { name = [[Oil of Dawn]], spellID = 1236492, itemID = 243735, skill = 0, source = [[Spec: Transitories, Tonics, and Tools]], category = [[Oils]], reagents = {{name="Mote of Light",itemID=236949,amount=5},{name="Petrified Root",itemID=251285,amount=2},{name="Eversinging Dust",itemID=243599,amount=5},{name="Sunglass Vial",itemID=240991,amount=1}}, note = [[Healer oil: chance to shield target]] },
+  { name = [[Smuggler's Enchanted Edge]], spellID = 1236493, itemID = 243737, skill = 0, source = [[Drop: Lithiel Cinderfury (Murder Row)]], category = [[Oils]], reagents = {{name="Mote of Primal Energy",itemID=236950,amount=5},{name="Petrified Root",itemID=251285,amount=2},{name="Eversinging Dust",itemID=243599,amount=5},{name="Sunglass Vial",itemID=240991,amount=1}}, note = [[DPS oil: Arcane damage]] },
+  { name = [[Thalassian Phoenix Oil]], spellID = 1236491, itemID = 243733, skill = 20, source = [[Trainer]], category = [[Oils]], reagents = {{name="Mote of Light",itemID=236949,amount=5},{name="Eversinging Dust",itemID=243599,amount=5},{name="Sunglass Vial",itemID=240991,amount=1}}, note = [[+Crit and +Haste]] },
 
   -- ========== Rods (Profession Tool) ==========
-  { name = [[Runed Refulgent Copper Rod]], spellID = 1236486, itemID = 244174, skill = 1, source = [[Trainer]], category = [[Rods]], note = [[Common starter rod]] },
+  -- itemID is the crafted runed rod (not the unruned base rod)
+  { name = [[Runed Refulgent Copper Rod]], spellID = 1236486, itemID = 244175, skill = 1, source = [[Trainer]], category = [[Rods]], reagents = {{name="Refulgent Copper Rod",itemID=244174,amount=1},{name="Eversinging Dust",itemID=243599,amount=5}}, note = [[Common starter rod]] },
   { name = [[Runed Brilliant Silver Rod]], spellID = 1236487, itemID = 244176, skill = 0, source = [[Spec: Transitories, Tonics, and Tools]], category = [[Rods]], note = [[Rare mid-tier]] },
   { name = [[Runed Dazzling Thorium Rod]], spellID = 1236488, itemID = 244177, skill = 0, source = [[Vendor: Lyna (Silvermoon)]], category = [[Rods]], note = [[Epic best stats]] },
 
@@ -99,9 +101,9 @@ private.RecipeData.Enchanting = {
 
 
   -- ========== Shattering ==========
-  { name = [[Dawn Shatter]], spellID = 1280401, itemID = 0, skill = 25, source = [[Trainer]], category = [[Shattering]], note = [[Dawn Crystal → 3 Radiant Shards]] },
-  { name = [[Radiant Shatter]], spellID = 1280394, itemID = 0, skill = 50, source = [[Trainer]], category = [[Shattering]], note = [[Radiant Shard → 3 Eversinging Dust]] },
-  { name = [[Shatter Essence]], spellID = 1235731, itemID = 0, skill = 0, source = [[Spec: Spellbound Shatterer]], category = [[Shattering]], note = [[Buff: +Resourcefulness, +Ingenuity, +Multicraft]] },
+  { name = [[Dawn Shatter]], spellID = 1280401, itemID = 267401, skill = 25, source = [[Trainer]], category = [[Shattering]], note = [[Dawn Crystal → 3 Radiant Shards]] },
+  { name = [[Radiant Shatter]], spellID = 1280394, itemID = 267393, skill = 50, source = [[Trainer]], category = [[Shattering]], note = [[Radiant Shard → 3 Eversinging Dust]] },
+  { name = [[Shatter Essence]], spellID = 1235731, itemID = 245934, skill = 0, source = [[Spec: Spellbound Shatterer]], category = [[Shattering]], note = [[Buff: +Resourcefulness, +Ingenuity, +Multicraft]] },
 
   -- ========== Illusions ==========
   { name = [[Illusory Adornment - Blooming Light]], spellID = 1236098, itemID = 244032, skill = 25, source = [[Trainer]], category = [[Illusions]], note = [[Golden/holy glow]] },
@@ -147,4 +149,8 @@ private.RecipeData.Enchanting = {
   { name = [[Rootflame Campfire]], spellID = 1246908, itemID = 262590, skill = 0, source = [[Drop: Heavy Trunk (Delves)]], category = [[House Decor]] },
   { name = [[Self-Pouring Thalassian Sunwine]], spellID = 1246909, itemID = 246693, skill = 0, source = [[Vendor: Neriv (Eversong)]], category = [[House Decor]] },
   { name = [[Spellbound Tome of Thalassian Magics]], spellID = 1246907, itemID = 262470, skill = 0, source = [[Vendor: Caeris Fairdawn (Renown)]], category = [[House Decor]] },
+  -- Patch 12.1 House Decor
+  { name = [[Enchanted Voidwell Fish]], spellID = 1296500, itemID = 279335, skill = 0, source = [[Patch 12.1]], category = [[House Decor]], reagents = {{name="Thalassian Lumber",itemID=256963,amount=12},{name="Cursebound Globe",itemID=274781,amount=6},{name="Eversong Trout",itemID=238383,amount=1},{name="Eversinging Dust",itemID=243599,amount=25}} },
+  { name = [[Furious Tiki Mask]], spellID = 1296499, itemID = 279362, skill = 0, source = [[Patch 12.1]], category = [[House Decor]], reagents = {{name="Thalassian Lumber",itemID=256963,amount=8},{name="Neutralized Venom Clot",itemID=274777,amount=6},{name="Eversinging Dust",itemID=243599,amount=12},{name="Radiant Shard",itemID=243602,amount=6}} },
+  { name = [[Keen Hex Mask]], spellID = 1296498, itemID = 279332, skill = 0, source = [[Patch 12.1]], category = [[House Decor]], reagents = {{name="Thalassian Lumber",itemID=256963,amount=12},{name="Cursebound Globe",itemID=274781,amount=8},{name="Eversinging Dust",itemID=243599,amount=12},{name="Radiant Shard",itemID=243602,amount=6}} },
 }
