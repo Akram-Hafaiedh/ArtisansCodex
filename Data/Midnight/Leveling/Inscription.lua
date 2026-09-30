@@ -6,7 +6,6 @@ local P = private.Data.Inscription
 
 P.name = "Inscription"
 
-P.icon = "Interface\\Icons\\Trade_Engraving"
 
 P.overview = "Midnight Inscription is arguably the easiest profession to level. Mill herbs into pigments, craft a handful of inks and first-craft items, then unlock the Thalassian Treatise on Inscription via Calm Hands and spam it (and the profession Treatises it discovers) all the way to 100. Pairs best with Herbalism."
 
@@ -68,11 +67,11 @@ P.leveling = {
 
                 { name = "Powder Pigment", amount = 460, itemID = 245807 },
 
-                { name = "Sanguithorn Pigment", amount = 110, itemID = 0 },
+                { name = "Sanguithorn Pigment", amount = 110, itemID = 245865 },
 
-                { name = "Mana Lily Pigment", amount = 115, itemID = 0 },
+                { name = "Mana Lily Pigment", amount = 115, itemID = 245867 },
 
-                { name = "Argentleaf Pigment", amount = 120, itemID = 0 },
+                { name = "Argentleaf Pigment", amount = 120, itemID = 245803 },
 
             },
 
@@ -183,7 +182,7 @@ P.leveling = {
 
             reagents = {
 
-                { name = "Lexicologist's Vellum", amount = 9, itemID = 245880 },
+                { name = "Lexicologist's Vellum", amount = 9, itemID = 245881 },
 
                 { name = "Mote of Wild Magic", amount = 3, itemID = 236951 },
 
@@ -215,7 +214,7 @@ P.leveling = {
 
                 { name = "Mote of Pure Void", amount = 2, itemID = 236952 },
 
-                { name = "Lexicologist's Vellum", amount = 9, itemID = 245880 },
+                { name = "Lexicologist's Vellum", amount = 9, itemID = 245881 },
 
                 { name = "Mote of Wild Magic", amount = 3, itemID = 236951 },
 

@@ -6,7 +6,6 @@ local P = private.Data.Mining
 
 P.name = "Mining"
 
-P.icon = "Interface\\Icons\\Trade_Mining"
 
 P.isGathering = true
 

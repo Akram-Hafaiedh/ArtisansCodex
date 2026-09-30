@@ -6,7 +6,6 @@ local P = private.Data.Leatherworking
 
 P.name = "Leatherworking"
 
-P.icon = "Interface\\Icons\\Trade_LeatherWorking"
 
 P.overview = "Midnight Leatherworking pairs best with Skinning so you can farm your own leather and scales. First-craft sweeping trainer recipes gets you to ~61 skill; 60-100 is optional unless you want to craft armor at Rank 4-5."
 

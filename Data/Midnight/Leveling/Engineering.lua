@@ -6,7 +6,6 @@ local P = private.Data.Engineering
 
 P.name = "Engineering"
 
-P.icon = "Interface\\Icons\\Trade_Engineering"
 
 P.overview = "Midnight Engineering is built around Recycling. Most recipes are discovered by recycling crafted reagents from any profession. Early levels use trainer recipes + Recycling, then Quel'dorei gear, and finally Housing Decor or Profession Equipment / Crafting Orders to reach 100."
 

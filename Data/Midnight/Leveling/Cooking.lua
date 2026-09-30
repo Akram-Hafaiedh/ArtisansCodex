@@ -6,7 +6,6 @@ local P = private.Data.Cooking
 
 P.name = "Cooking"
 
-P.icon = "Interface\\Icons\\INV_Misc_Food_15"
 
 P.overview = "Midnight Cooking can be leveled 1-100 almost entirely with vendor materials near the trainer in Silvermoon City. No gathering profession needed."
 

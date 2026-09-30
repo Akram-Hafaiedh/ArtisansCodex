@@ -6,7 +6,6 @@ local P = private.Data.Tailoring
 
 P.name = "Tailoring"
 
-P.icon = "Interface\\Icons\\Trade_Tailoring"
 
 P.overview = "Midnight Tailoring is one of the simpler professions to level. Most of the early skill comes from trainer recipes and Bright Linen Bolts. At skill 25 you unlock specializations. Best paired with a gathering profession or buying cheap cloth from the AH."
 
@@ -41,7 +40,7 @@ P.leveling = {
 
             reagents = {
 
-                { name = "Bright Linen", amount = 66, itemID = 236963 },
+                { name = "Bright Linen", amount = 66, itemID = 236965 },
 
             },
 
@@ -474,7 +473,7 @@ P.leveling = {
 
                     reagents = {
 
-                        { name = "Sunfire Silk",      amount = 168, itemID = 237015 },
+                        { name = "Sunfire Silk",      amount = 168, itemID = 237016 },
 
                         { name = "Sunfire Silk Bolt", amount = 56,  itemID = 239201 },
 
@@ -492,7 +491,7 @@ P.leveling = {
 
                     reagents = {
 
-                        { name = "Arcanoweave",      amount = 168, itemID = 237016 },
+                        { name = "Arcanoweave",      amount = 168, itemID = 237017 },
 
                         { name = "Arcanoweave Bolt", amount = 56,  itemID = 239198 },
 
@@ -526,7 +525,7 @@ P.leveling = {
 
                 { name = "Sunfire Silk Bolt", amount = 107, itemID = 239201 },
 
-                { name = "Radiant Shard",     amount = 40,  itemID = 243603 },
+                { name = "Radiant Shard",     amount = 40,  itemID = 243602 },
 
             },
 
@@ -551,7 +550,7 @@ P.leveling = {
 
                         { name = "Sunfire Silk Bolt", amount = 8, itemID = 239201 },
 
-                        { name = "Radiant Shard", amount = 3, itemID = 243603 },
+                        { name = "Radiant Shard", amount = 3, itemID = 243602 },
 
                     },
 
@@ -572,7 +571,7 @@ P.leveling = {
 
                         { name = "Sunfire Silk Bolt", amount = 8, itemID = 239201 },
 
-                        { name = "Radiant Shard", amount = 3, itemID = 243603 },
+                        { name = "Radiant Shard", amount = 3, itemID = 243602 },
 
                     },
 
@@ -593,7 +592,7 @@ P.leveling = {
 
                         { name = "Sunfire Silk Bolt", amount = 8, itemID = 239201 },
 
-                        { name = "Radiant Shard", amount = 3, itemID = 243603 },
+                        { name = "Radiant Shard", amount = 3, itemID = 243602 },
 
                     },
 
@@ -614,7 +613,7 @@ P.leveling = {
 
                         { name = "Sunfire Silk Bolt", amount = 8, itemID = 239201 },
 
-                        { name = "Radiant Shard", amount = 3, itemID = 243603 },
+                        { name = "Radiant Shard", amount = 3, itemID = 243602 },
 
                     },
 
@@ -635,7 +634,7 @@ P.leveling = {
 
                         { name = "Sunfire Silk Bolt", amount = 8, itemID = 239201 },
 
-                        { name = "Radiant Shard", amount = 3, itemID = 243603 },
+                        { name = "Radiant Shard", amount = 3, itemID = 243602 },
 
                     },
 
@@ -656,7 +655,7 @@ P.leveling = {
 
                         { name = "Sunfire Silk Bolt", amount = 8, itemID = 239201 },
 
-                        { name = "Radiant Shard", amount = 3, itemID = 243603 },
+                        { name = "Radiant Shard", amount = 3, itemID = 243602 },
 
                     },
 

@@ -6,7 +6,6 @@ local P = private.Data.Fishing
 
 P.name = "Fishing"
 
-P.icon = "Interface\\Icons\\Trade_Fishing"
 
 P.isGathering = true
 

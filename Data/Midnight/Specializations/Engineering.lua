@@ -1,5 +1,5 @@
 -- Midnight Engineering specialization guide
--- Trees: live export 2026-09-28 (Debug → Specs). Builds: wow-professions style.
+-- Trees: live export 2026-09-28 (Debug -> Specs). Builds: wow-professions style.
 
 local _, private = ...
 private.SpecGuideData = private.SpecGuideData or {}
@@ -43,7 +43,7 @@ private.SpecGuideData.Engineering = {
             rootNodeID = 109141,
             maxKP = 165,
             unlockSkill = 50,
-            summary = "Goggles, bracers, boots, and guns — combat gear for orders and personal use.",
+            summary = "Goggles, bracers, boots, and guns - combat gear for orders and personal use.",
             paths = {
                 { pathID = 109141, name = "Combat Analytics", maxKP = 25 },
                 { pathID = 109140, name = "Goggles", maxKP = 35 },
@@ -106,12 +106,12 @@ private.SpecGuideData.Engineering = {
             key = "profession_gear",
             name = "Profession Gear",
             goal = "Tools & accessories for orders and alts",
-            summary = "Recycling for discovery, then Market Mobility → Mandatory Tools → Finishing Touches.",
+            summary = "Recycling for discovery, then Market Mobility -> Mandatory Tools -> Finishing Touches.",
             steps = {
                 { tree = "Recycling", node = "Recycling", pathID = 106755, points = 10,
                   note = "Root ranks; unlocks a sub-spec and path toward discovery" },
                 { tree = "Recycling", node = "Recycling", pathID = 106755, points = 10,
-                  note = "Continue root — discovery perk is on this wheel" },
+                  note = "Continue root - discovery perk is on this wheel" },
                 { tree = "Market Mobility", node = "Market Mobility", pathID = 106719, points = 10,
                   note = "Open Mandatory Tools / Finishing Touches branches" },
                 { tree = "Market Mobility", node = "Mandatory Tools", pathID = 106714, points = 10,
@@ -123,7 +123,7 @@ private.SpecGuideData.Engineering = {
                 { tree = "Market Mobility", node = "Finishing Touches", pathID = 106718, points = 10,
                   note = "Accessories & rods branches open" },
                 { tree = "Market Mobility", node = "Jewelcrafting or Tailoring Tools", pathID = 106713, points = 10,
-                  note = "Sin'dorei Clampers / Snippers — pick who you supply" },
+                  note = "Sin'dorei Clampers / Snippers - pick who you supply" },
             },
         },
         {
@@ -135,7 +135,7 @@ private.SpecGuideData.Engineering = {
                 { tree = "Recycling", node = "Recycling", pathID = 106755, points = 10,
                   note = "Optional: discovery + general Engineering stats" },
                 { tree = "Combat Analytics", node = "Combat Analytics", pathID = 109141, points = 25,
-                  note = "Fill root — reagents unlocks + all gear branches" },
+                  note = "Fill root - reagents unlocks + all gear branches" },
                 { tree = "Combat Analytics", node = "Goggles", pathID = 109140, points = 15,
                   note = "Aetherlume goggles (all armor types) on perks" },
                 { tree = "Combat Analytics", node = "Bracers", pathID = 109139, points = 15,
@@ -155,7 +155,7 @@ private.SpecGuideData.Engineering = {
                 { tree = "Recycling", node = "Recycling", pathID = 106755, points = 10,
                   note = "Unlock sub-specs + discovery path" },
                 { tree = "Recycling", node = "Recycling", pathID = 106755, points = 20,
-                  note = "Finish root — includes +100% recycle materials perk" },
+                  note = "Finish root - includes +100% recycle materials perk" },
                 { tree = "Recycling", node = "Multicraft", pathID = 106753, points = 20,
                   note = "Extra goods on Engineering crafts" },
                 { tree = "Recycling", node = "Resourcefulness", pathID = 106752, points = 20,

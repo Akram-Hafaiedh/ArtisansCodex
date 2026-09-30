@@ -6,7 +6,6 @@ local P = private.Data.Alchemy
 
 P.name = "Alchemy"
 
-P.icon = "Interface\\Icons\\Trade_Alchemy"
 
 P.overview = "Midnight Alchemy uses Camberon's Cauldron, a deterministic (no-RNG) discovery system. You unlock recipes by meeting simple requirements and spending Artisan Alchemist's Moxie. Pairs best with Herbalism."
 
@@ -77,7 +76,7 @@ P.leveling = {
 
             reagents = {
 
-                { name = "Silvermoon Health Potion", amount = 10, itemID = 240980 },
+                { name = "Silvermoon Health Potion", amount = 10, itemID = 241305 },
 
                 { name = "Oil of Heartwood", amount = 10, itemID = 247811 },
 
@@ -172,7 +171,7 @@ P.leveling = {
 
                 { name = "Mote of Light", amount = 2, itemID = 236949 },
 
-                { name = "Refreshing Serum", amount = 5, itemID = 0 },
+                { name = "Refreshing Serum", amount = 5, itemID = 241307 },
 
             },
 

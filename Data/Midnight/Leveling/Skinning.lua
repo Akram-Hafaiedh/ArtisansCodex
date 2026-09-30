@@ -6,7 +6,6 @@ local P = private.Data.Skinning
 
 P.name = "Skinning"
 
-P.icon = "Interface\\Icons\\INV_Misc_Pelt_Wolf_01"
 
 P.isGathering = true
 

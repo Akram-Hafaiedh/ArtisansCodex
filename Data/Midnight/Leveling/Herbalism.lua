@@ -6,7 +6,6 @@ local P = private.Data.Herbalism
 
 P.name = "Herbalism"
 
-P.icon = "Interface\\Icons\\Trade_Herbalism"
 
 P.isGathering = true
 

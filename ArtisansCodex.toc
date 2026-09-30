@@ -10,6 +10,9 @@ Init.lua
 Core.lua
 Locales/enUS.lua
 
+# Base profession registry (names, icons, skill lines)
+Data/Midnight/Professions.lua
+
 # Shared progress / first-craft catalogs
 Data/Midnight/ProgressMeta.lua
 Data/Midnight/FirstCrafts.lua

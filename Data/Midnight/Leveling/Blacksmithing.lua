@@ -6,7 +6,6 @@ local P = private.Data.Blacksmithing
 
 P.name = "Blacksmithing"
 
-P.icon = "Interface\\Icons\\Trade_BlackSmithing"
 
 P.overview = "Midnight Blacksmithing is a straightforward First Craft + Sterling Alloy grind to 70, then Rare Profession Equipment, Epic Profession Equipment, or Crafting Orders to finish. Pairs best with Mining, since ore costs add up fast if you're buying everything from the AH."
 

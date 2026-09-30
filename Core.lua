@@ -1530,28 +1530,13 @@ function addon:BuildProfessionSidebar(parent, opts)
             btn:SetBackdropBorderColor(0.35, 0.30, 0.18, 0.8)
         end
 
-        -- Profession icon (same texture as Leveling data P.icon)
-        local FALLBACK_ICONS = {
-            Alchemy = "Interface\\Icons\\Trade_Alchemy",
-            Blacksmithing = "Interface\\Icons\\Trade_BlackSmithing",
-            Cooking = "Interface\\Icons\\INV_Misc_Food_15",
-            Enchanting = "Interface\\Icons\\Trade_Engraving",
-            Engineering = "Interface\\Icons\\Trade_Engineering",
-            Fishing = "Interface\\Icons\\Trade_Fishing",
-            Herbalism = "Interface\\Icons\\Trade_Herbalism",
-            Inscription = "Interface\\Icons\\INV_Inscription_Tradeskill01",
-            Jewelcrafting = "Interface\\Icons\\INV_Misc_Gem_01",
-            Leatherworking = "Interface\\Icons\\INV_Misc_ArmorKit_17",
-            Mining = "Interface\\Icons\\Trade_Mining",
-            Skinning = "Interface\\Icons\\INV_Misc_Pelt_Wolf_01",
-            Tailoring = "Interface\\Icons\\Trade_Tailoring",
-        }
+        -- Profession icon from base registry (Data/Midnight/Professions.lua)
         local iconPath
-        local pdata = private.Data and private.Data[name]
-        if type(pdata) == "table" and pdata.icon then
-            iconPath = pdata.icon
-        else
-            iconPath = FALLBACK_ICONS[name]
+        if private.Professions and private.Professions.GetIcon then
+            iconPath = private.Professions:GetIcon(name)
+        end
+        if not iconPath or iconPath == "" then
+            iconPath = "Interface\\Icons\\INV_Misc_QuestionMark"
         end
 
         local icon = btn:CreateTexture(nil, "ARTWORK")

@@ -6,7 +6,6 @@ local P = private.Data.Enchanting
 
 P.name = "Enchanting"
 
-P.icon = "Interface\\Icons\\Trade_Engraving"
 
 P.overview = "Midnight Enchanting doesn't need a gathering profession, so it pairs with anything. Put everything on an Enchanting Vellum and sell on the AH. Disenchant leftover gear before you start for free skill points up to 25."
 

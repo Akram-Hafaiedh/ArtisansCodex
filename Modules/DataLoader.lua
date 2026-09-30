@@ -10,11 +10,16 @@ private.Data = private.Data or {}
 function DataLoader:Load()
     private:Print("Loading profession data...")
 
-    private.Data.professions = {
-        "Alchemy", "Blacksmithing", "Enchanting", "Engineering",
-        "Herbalism", "Inscription", "Jewelcrafting", "Leatherworking",
-        "Mining", "Skinning", "Tailoring", "Cooking", "Fishing",
-    }
+    -- Canonical order from Data/Midnight/Professions.lua
+    if private.Professions and private.Professions.list then
+        private.Data.professions = private.Professions.list
+    else
+        private.Data.professions = {
+            "Alchemy", "Blacksmithing", "Enchanting", "Engineering",
+            "Herbalism", "Inscription", "Jewelcrafting", "Leatherworking",
+            "Mining", "Skinning", "Tailoring", "Cooking", "Fishing",
+        }
+    end
 
     local loaded, withLeveling, withKnowledge = 0, 0, 0
     for _, name in ipairs(private.Data.professions) do

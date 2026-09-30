@@ -6,7 +6,6 @@ local P = private.Data.Jewelcrafting
 
 P.name = "Jewelcrafting"
 
-P.icon = "Interface\\Icons\\Trade_Jewelcrafting"
 
 P.overview = "Midnight Jewelcrafting pairs best with Mining so you can prospect your own ore and gems. Leveling to 65 is cheap and linear; 65-100 is optional unless you want guaranteed gold-quality jewelry without Concentration."
 
@@ -35,7 +34,7 @@ P.shoppingList = {
 
         { name = "Glimmering Gemdust", amount = 31, itemID = 242620 },
 
-        { name = "Crystalline Glass", amount = 100, itemID = 242786 },
+        { name = "Crystalline Glass", amount = 100, itemID = 242787 },
 
         { name = "Duskshrouded Stone", amount = 7, itemID = 242788 },
 
@@ -63,7 +62,7 @@ P.leveling = {
 
                 { name = "Glimmering Gemdust", amount = 4, itemID = 242620 },
 
-                { name = "Crystalline Glass", amount = 12, itemID = 242786 },
+                { name = "Crystalline Glass", amount = 12, itemID = 242787 },
 
             },
 
@@ -120,7 +119,7 @@ P.leveling = {
 
             reagents = {
 
-                { name = "Crystalline Glass", amount = 80, itemID = 242786 },
+                { name = "Crystalline Glass", amount = 80, itemID = 242787 },
 
             },
 

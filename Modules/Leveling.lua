@@ -160,12 +160,18 @@ function addon:BuildLeveling()
     leftCol:SetPoint("RIGHT", rightCol, "LEFT", -14, 0)
 
     -- Row 1: Icon + Title (both anchored to the TOP of the left column)
-    if profData and profData.icon then
-        local icon = leftCol:CreateTexture(nil, "ARTWORK")
-        icon:SetSize(28, 28)
-        icon:SetPoint("TOPLEFT", 0, 0)                 -- unchanged
-        icon:SetTexture(profData.icon)
-        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    do
+        local iconPath
+        if private.Professions and private.Professions.GetIcon then
+            iconPath = private.Professions:GetIcon(self.selectedLevelingProf)
+        end
+        if iconPath then
+            local icon = leftCol:CreateTexture(nil, "ARTWORK")
+            icon:SetSize(28, 28)
+            icon:SetPoint("TOPLEFT", 0, 0)
+            icon:SetTexture(iconPath)
+            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        end
     end
 
     local headerTitle = leftCol:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -234,6 +240,13 @@ function addon:BuildLeveling()
     self.levelingSubTabOffsets = self.levelingSubTabOffsets or { steps = 0, shopping = 0 }
     self.selectedAlternatives = self.selectedAlternatives or {}
 
+    -- Gathering professions have no craft reagents shopping list
+    local isGathering = private.Professions and private.Professions.IsGathering
+        and private.Professions:IsGathering(self.selectedLevelingProf)
+    if isGathering and self.levelingSubTab == "shopping" then
+        self.levelingSubTab = "steps"
+    end
+
     local subTabBar = CreateFrame("Frame", nil, page)
     subTabBar:SetPoint("TOPLEFT", 215, -158)
     subTabBar:SetSize(400, 28)
@@ -279,11 +292,13 @@ function addon:BuildLeveling()
         return btn
     end
 
-    MakeSubTab("steps",    "Steps",         0)
-    MakeSubTab("shopping", "Shopping List", 136)
+    MakeSubTab("steps", "Steps", 0)
+    if not isGathering then
+        MakeSubTab("shopping", "Shopping List", 136)
+    end
 
     -- ---- Branch: render shopping list OR steps ----
-    if self.levelingSubTab == "shopping" then
+    if (not isGathering) and self.levelingSubTab == "shopping" then
         self:RenderShoppingListBody(page, profData, -192)
         return
     end
@@ -1143,6 +1158,81 @@ end
 -- ============================================================
 -- SHOPPING LIST ENGINE
 -- ============================================================
+
+-- Short aliases used in "A / B / C" alternative rows in leveling data.
+local MATERIAL_ALIASES = {
+    ["Wild Magic"]     = "Mote of Wild Magic",
+    ["Primal Energy"]  = "Mote of Primal Energy",
+    ["Light"]          = "Mote of Light",
+    ["Pure Void"]      = "Mote of Pure Void",
+}
+
+-- Known material name → itemID (from Recipes + leveling). Prefer base quality.
+local MATERIAL_ITEM_IDS = {
+    ["Mote of Light"]              = 236949,
+    ["Mote of Primal Energy"]      = 236950,
+    ["Mote of Wild Magic"]         = 236951,
+    ["Mote of Pure Void"]          = 236952,
+    ["Duskshrouded Stone"]         = 242788,
+    ["Scalewoven Hide"]            = 244631,
+    ["Infused Scalewoven Hide"]    = 244633,
+    ["Sin'dorei Armor Banding"]    = 244635,
+    ["Petrified Root"]             = 251285,
+    ["Fantastic Fur"]              = 238525,
+    ["Carving Canine"]             = 238523,
+}
+
+--- Split "A / B / C" (or a single name) into { name, itemID } parts for icons / counts.
+function addon:ResolveMaterialAlternatives(name, itemID)
+    local parts = {}
+    if type(name) ~= "string" or name == "" then
+        return parts
+    end
+
+    local segments = {}
+    if name:find(" / ", 1, true) then
+        for seg in name:gmatch("([^/]+)") do
+            seg = seg:match("^%s*(.-)%s*$") or seg
+            if seg ~= "" then
+                segments[#segments + 1] = seg
+            end
+        end
+    else
+        segments[1] = name
+    end
+
+    for _, seg in ipairs(segments) do
+        local fullName = MATERIAL_ALIASES[seg] or seg
+        local id = MATERIAL_ITEM_IDS[fullName]
+        if (not id or id == 0) and itemID and itemID ~= 0 and #segments == 1 then
+            id = itemID
+        end
+        -- Fallback: scan RecipeData reagents once we know the name
+        if (not id or id == 0) and private.RecipeData then
+            for _, list in pairs(private.RecipeData) do
+                if type(list) == "table" then
+                    for _, recipe in ipairs(list) do
+                        if recipe.itemID and recipe.name == fullName and recipe.itemID > 0 then
+                            id = recipe.itemID
+                            break
+                        end
+                        for _, r in ipairs(recipe.reagents or {}) do
+                            if r.name == fullName and r.itemID and r.itemID > 0 then
+                                id = r.itemID
+                                break
+                            end
+                        end
+                        if id and id > 0 then break end
+                    end
+                end
+                if id and id > 0 then break end
+            end
+        end
+        parts[#parts + 1] = { name = fullName, itemID = id or 0 }
+    end
+    return parts
+end
+
 function addon:CollectAllMaterials(profData)
     local totals = {}
     local order  = {}
@@ -1208,7 +1298,24 @@ function addon:CollectAllMaterials(profData)
     local list = {}
     for _, key in ipairs(order) do
         local e = totals[key]
-        e.owned     = self:GetItemCount(e.itemID)
+        e.parts = self:ResolveMaterialAlternatives(e.name, e.itemID)
+        -- OR-alternatives: any listed item counts toward the total
+        local owned = 0
+        if e.parts and #e.parts > 1 then
+            for _, p in ipairs(e.parts) do
+                if p.itemID and p.itemID > 0 then
+                    owned = owned + (self:GetItemCount(p.itemID) or 0)
+                end
+            end
+        elseif e.itemID and e.itemID ~= 0 then
+            owned = self:GetItemCount(e.itemID) or 0
+        elseif e.parts and e.parts[1] and e.parts[1].itemID and e.parts[1].itemID > 0 then
+            owned = self:GetItemCount(e.parts[1].itemID) or 0
+            e.itemID = e.parts[1].itemID
+        else
+            owned = self:GetItemCount(e.itemID) or 0
+        end
+        e.owned     = owned
         e.remaining = math.max(0, e.required - e.owned)
         list[#list + 1] = e
     end
@@ -1294,22 +1401,40 @@ function addon:RenderShoppingListBody(page, profData, topY)
                 missing = missing + 1
             end
 
-            -- Item icon
-            local icon = row:CreateTexture(nil, "ARTWORK")
-            icon:SetSize(20, 20)
-            icon:SetPoint("LEFT", 10, 0)
-            icon:SetTexture(self:GetItemIcon(mat.itemID))
-            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-
-            -- Name
-            local name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-            name:SetPoint("LEFT", icon, "RIGHT", 8, 0)
-            name:SetText(mat.name or "?")
-            if isComplete then
-                name:SetTextColor(0.55, 0.55, 0.55)
+            -- Material parts: split "A / B / C" so each gets its own icon + name
+            local parts = mat.parts
+            if not parts or #parts == 0 then
+                parts = self:ResolveMaterialAlternatives(mat.name, mat.itemID)
             end
 
-            -- HAVE (owned / required)
+            local x = 10
+            local tipIDs = {}
+            for i, p in ipairs(parts) do
+                local icon = row:CreateTexture(nil, "ARTWORK")
+                icon:SetSize(18, 18)
+                icon:SetPoint("LEFT", x, 0)
+                icon:SetTexture(self:GetItemIcon(p.itemID))
+                icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                x = x + 20
+
+                local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                label:SetPoint("LEFT", x, 0)
+                local labelText = p.name or "?"
+                if i < #parts then
+                    labelText = labelText .. "  |cff666666/|r  "
+                end
+                label:SetText(labelText)
+                if isComplete then
+                    label:SetTextColor(0.55, 0.55, 0.55)
+                end
+                x = x + (label:GetStringWidth() or 80) + 4
+
+                if p.itemID and p.itemID > 0 then
+                    tipIDs[#tipIDs + 1] = p.itemID
+                end
+            end
+
+            -- HAVE (owned / required) — owned sums all alternatives
             local have = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             have:SetPoint("RIGHT", -190, 0)
             have:SetText(string.format("%d / %d", mat.owned, mat.required))
@@ -1324,12 +1449,24 @@ function addon:RenderShoppingListBody(page, profData, topY)
                 needed:SetText("|cffffd700×" .. mat.remaining .. "|r")
             end
 
-            -- Hover tooltip on the row
+            -- Hover: single item tooltip, or list each alternative
             row:EnableMouse(true)
-            if mat.itemID and mat.itemID ~= 0 then
+            if #tipIDs > 0 then
                 row:SetScript("OnEnter", function(selfRow)
                     GameTooltip:SetOwner(selfRow, "ANCHOR_RIGHT")
-                    GameTooltip:SetItemByID(mat.itemID)
+                    if #tipIDs == 1 then
+                        GameTooltip:SetItemByID(tipIDs[1])
+                    else
+                        GameTooltip:AddLine("Any of:", 1, 0.85, 0.2)
+                        for _, id in ipairs(tipIDs) do
+                            local iname = (C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(id)) or ("item:" .. id)
+                            local icount = addon:GetItemCount(id) or 0
+                            GameTooltip:AddLine(
+                                string.format("  %s  (|cffaaaaaa%d|r)", iname or "?", icount),
+                                0.85, 0.85, 0.85
+                            )
+                        end
+                    end
                     GameTooltip:Show()
                 end)
                 row:SetScript("OnLeave", function()
