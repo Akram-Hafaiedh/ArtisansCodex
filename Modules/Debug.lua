@@ -712,6 +712,7 @@ function Debug:CreateFrame()
     end
     f.tabLog = MakeTab("Log", "log", 14)
     f.tabRecipes = MakeTab("Recipes", "recipes", 110)
+    f.tabSpecs = MakeTab("Specs", "specs", 206)
 
     -- Content hosts
     f.logPanel = CreateFrame("Frame", nil, f)
@@ -723,9 +724,15 @@ function Debug:CreateFrame()
     f.recipesPanel:SetPoint("BOTTOMRIGHT", -10, 10)
     f.recipesPanel:Hide()
 
+    f.specsPanel = CreateFrame("Frame", nil, f)
+    f.specsPanel:SetPoint("TOPLEFT", 10, -64)
+    f.specsPanel:SetPoint("BOTTOMRIGHT", -10, 10)
+    f.specsPanel:Hide()
+
     self.frame = f
     self:BuildLogPanel()
     self:BuildRecipesPanel()
+    self:BuildSpecsPanel()
 end
 
 function Debug:ShowTab(key)
@@ -734,6 +741,7 @@ function Debug:ShowTab(key)
     if not f then return end
     f.logPanel:SetShown(key == "log")
     f.recipesPanel:SetShown(key == "recipes")
+    f.specsPanel:SetShown(key == "specs")
     local function style(btn, active)
         if active then
             btn:SetBackdropColor(0.35, 0.28, 0.12, 0.95)
@@ -745,8 +753,10 @@ function Debug:ShowTab(key)
     end
     style(f.tabLog, key == "log")
     style(f.tabRecipes, key == "recipes")
+    style(f.tabSpecs, key == "specs")
     if key == "log" then self:RefreshLog() end
     if key == "recipes" then self:RefreshRecipes() end
+    if key == "specs" then self:RefreshSpecs() end
 end
 
 function Debug:BuildLogPanel()
@@ -1232,6 +1242,420 @@ function Debug:RefreshRecipes()
     end
     child:SetSize(width, math.max(40, math.abs(y) + 8))
 end
+
+
+-- ============================================================
+-- SPECS TAB — live path/perk export for guide data
+-- ============================================================
+
+local function SpecResolveName(configID, nodeID)
+    if not configID or not nodeID or not C_Traits then return nil, nil, nil end
+    local ok, nodeInfo = pcall(C_Traits.GetNodeInfo, configID, nodeID)
+    if not ok or not nodeInfo then return nil, nil, nil end
+    local entryID = nodeInfo.activeEntry and nodeInfo.activeEntry.entryID
+    if not entryID and nodeInfo.entryIDs and nodeInfo.entryIDs[1] then
+        entryID = nodeInfo.entryIDs[1]
+    end
+    local name, desc, spellID, icon
+    if entryID and C_Traits.GetEntryInfo then
+        local okE, entry = pcall(C_Traits.GetEntryInfo, configID, entryID)
+        if okE and entry and entry.definitionID and C_Traits.GetDefinitionInfo then
+            local okD, def = pcall(C_Traits.GetDefinitionInfo, entry.definitionID)
+            if okD and def then
+                name = def.overrideName
+                desc = def.overrideDescription
+                spellID = def.spellID or def.overriddenSpellID
+                icon = def.overrideIcon
+                if (not name or name == "") and spellID and spellID > 0 then
+                    if C_Spell and C_Spell.GetSpellName then
+                        name = C_Spell.GetSpellName(spellID)
+                    elseif GetSpellInfo then
+                        name = GetSpellInfo(spellID)
+                    end
+                end
+            end
+        end
+    end
+    local cur = nodeInfo.currentRank or 0
+    local maxR = nodeInfo.maxRanks or 0
+    local spent = (cur > 1) and (cur - 1) or 0
+    local maxKP = (maxR > 1) and (maxR - 1) or 0
+    return name, desc, {
+        nodeID = nodeID,
+        entryID = entryID,
+        spellID = spellID,
+        icon = icon,
+        currentRank = cur,
+        maxRanks = maxR,
+        spentKP = spent,
+        maxKP = maxKP,
+        canPurchase = nodeInfo.canPurchaseRank,
+        isAvailable = nodeInfo.isAvailable,
+        isLocked = nodeInfo.isLocked,
+    }
+end
+
+function Debug:ScanLiveSpecs(profName)
+    local metaTable = private.ProgressMeta and private.ProgressMeta.professions
+    local meta = metaTable and metaTable[profName]
+    if not meta or not meta.variantID then
+        return nil, "No ProgressMeta for " .. tostring(profName)
+    end
+    if not C_ProfSpecs then
+        return nil, "C_ProfSpecs missing"
+    end
+
+    local variantID = meta.variantID
+    local skillLineID = meta.skillLineID or (addon.GetLearnedSkillLineID and addon:GetLearnedSkillLineID(profName))
+
+    local configID
+    local okCfg, cfg = pcall(C_ProfSpecs.GetConfigIDForSkillLine, variantID)
+    if okCfg and cfg and cfg > 0 then configID = cfg end
+    if not configID then
+        return nil, "No config — open the profession Spec page once (skill 25+)."
+    end
+
+    local unspent = 0
+    if C_ProfSpecs.GetCurrencyInfoForSkillLine then
+        local ok, info = pcall(C_ProfSpecs.GetCurrencyInfoForSkillLine, variantID)
+        if ok and info then unspent = info.numAvailable or info.quantity or 0 end
+    end
+
+    local tabIDs
+    if skillLineID and C_ProfSpecs.GetSpecTabIDsForSkillLine then
+        local ok, ids = pcall(C_ProfSpecs.GetSpecTabIDsForSkillLine, skillLineID)
+        if ok and type(ids) == "table" then tabIDs = ids end
+    end
+    if (not tabIDs or #tabIDs == 0) and C_ProfSpecs.GetSpecTabIDsForSkillLine then
+        local ok, ids = pcall(C_ProfSpecs.GetSpecTabIDsForSkillLine, variantID)
+        if ok and type(ids) == "table" then tabIDs = ids end
+    end
+    if not tabIDs or #tabIDs == 0 then
+        return nil, "No spec tabs for this profession."
+    end
+
+    local function walkPath(pathID, depth, into, seen)
+        if not pathID or pathID == 0 or seen[pathID] then return end
+        seen[pathID] = true
+        local name, desc, metaN = SpecResolveName(configID, pathID)
+        local row = {
+            pathID = pathID,
+            depth = depth,
+            kind = "path",
+            name = name or ("Path " .. pathID),
+            description = desc or "",
+            spellID = metaN and metaN.spellID or 0,
+            icon = metaN and metaN.icon or 0,
+            currentRank = metaN and metaN.currentRank or 0,
+            maxRanks = metaN and metaN.maxRanks or 0,
+            spentKP = metaN and metaN.spentKP or 0,
+            maxKP = metaN and metaN.maxKP or 0,
+        }
+        into[#into + 1] = row
+
+        if C_ProfSpecs.GetPerksForPath then
+            local okP, perks = pcall(C_ProfSpecs.GetPerksForPath, pathID)
+            if okP and type(perks) == "table" then
+                for _, perk in ipairs(perks) do
+                    local perkID = type(perk) == "table" and (perk.perkID or perk.ID) or perk
+                    if type(perkID) == "number" and perkID > 0 and not seen[perkID] then
+                        seen[perkID] = true
+                        local pn, pd, pm = SpecResolveName(configID, perkID)
+                        into[#into + 1] = {
+                            pathID = perkID,
+                            depth = depth + 1,
+                            kind = "perk",
+                            name = pn or ("Perk " .. perkID),
+                            description = pd or "",
+                            spellID = pm and pm.spellID or 0,
+                            icon = pm and pm.icon or 0,
+                            currentRank = pm and pm.currentRank or 0,
+                            maxRanks = pm and pm.maxRanks or 0,
+                            spentKP = pm and pm.spentKP or 0,
+                            maxKP = pm and pm.maxKP or 0,
+                            parentPathID = pathID,
+                        }
+                    end
+                end
+            end
+        end
+        if C_ProfSpecs.GetChildrenForPath then
+            local okC, children = pcall(C_ProfSpecs.GetChildrenForPath, pathID)
+            if okC and type(children) == "table" then
+                for _, childID in ipairs(children) do
+                    walkPath(childID, depth + 1, into, seen)
+                end
+            end
+        end
+    end
+
+    local trees = {}
+    for _, tabID in ipairs(tabIDs) do
+        local tabName, tabDesc, rootNodeID, rootIcon = "Tree", "", nil, nil
+        if C_ProfSpecs.GetTabInfo then
+            local ok, info = pcall(C_ProfSpecs.GetTabInfo, tabID)
+            if ok and info then
+                tabName = info.name or tabName
+                tabDesc = info.description or ""
+                rootNodeID = info.rootNodeID
+                rootIcon = info.rootIconID
+            end
+        end
+        if not rootNodeID and C_ProfSpecs.GetRootPathForTab then
+            local ok, root = pcall(C_ProfSpecs.GetRootPathForTab, tabID)
+            if ok then rootNodeID = root end
+        end
+
+        local nodes = {}
+        local seen = {}
+        if rootNodeID then
+            walkPath(rootNodeID, 0, nodes, seen)
+        end
+
+        local spent, maxK = 0, 0
+        for _, n in ipairs(nodes) do
+            spent = spent + (n.spentKP or 0)
+            maxK = maxK + (n.maxKP or 0)
+        end
+
+        trees[#trees + 1] = {
+            tabID = tabID,
+            name = tabName,
+            description = tabDesc,
+            rootNodeID = rootNodeID or 0,
+            rootIcon = rootIcon or 0,
+            spentKP = spent,
+            maxKP = maxK,
+            nodes = nodes,
+        }
+    end
+
+    return {
+        profName = profName,
+        variantID = variantID,
+        skillLineID = skillLineID,
+        configID = configID,
+        unspent = unspent,
+        trees = trees,
+    }
+end
+
+function Debug:FormatSpecExport(scan)
+    if not scan then return "-- no scan", 0 end
+    local lines = {}
+    lines[#lines + 1] = string.format("-- ArtisansCodex specialization export %s", date and date("%Y-%m-%d %H:%M") or "")
+    lines[#lines + 1] = string.format("-- Profession: %s  variantID=%s  configID=%s  unspent=%s",
+        tostring(scan.profName), tostring(scan.variantID), tostring(scan.configID), tostring(scan.unspent))
+    lines[#lines + 1] = "-- Paste into Data/Midnight/Specializations/<Prof>.lua (trees section)."
+    lines[#lines + 1] = "trees = {"
+    local n = 0
+    for _, tree in ipairs(scan.trees or {}) do
+        lines[#lines + 1] = string.format("  { -- %s", tree.name or "?")
+        lines[#lines + 1] = string.format("    tabID = %d,", tree.tabID or 0)
+        lines[#lines + 1] = string.format("    name = %q,", tree.name or "")
+        lines[#lines + 1] = string.format("    description = %q,", (tree.description or ""):gsub("\n", " "))
+        lines[#lines + 1] = string.format("    rootNodeID = %d,", tree.rootNodeID or 0)
+        lines[#lines + 1] = string.format("    -- spentKP=%d maxKP=%d", tree.spentKP or 0, tree.maxKP or 0)
+        lines[#lines + 1] = "    nodes = {"
+        for _, node in ipairs(tree.nodes or {}) do
+            n = n + 1
+            local pad = string.rep("  ", (node.depth or 0) + 3)
+            lines[#lines + 1] = string.format(
+                "%s{ kind=%q, pathID=%d, name=%q, spellID=%d, maxRanks=%d, maxKP=%d, depth=%d, description=%q },",
+                pad,
+                node.kind or "path",
+                node.pathID or 0,
+                node.name or "",
+                node.spellID or 0,
+                node.maxRanks or 0,
+                node.maxKP or 0,
+                node.depth or 0,
+                (node.description or ""):gsub("\n", " "):sub(1, 200)
+            )
+        end
+        lines[#lines + 1] = "    },"
+        lines[#lines + 1] = "  },"
+    end
+    lines[#lines + 1] = "}"
+    lines[#lines + 1] = string.format("-- %d nodes across %d trees", n, #(scan.trees or {}))
+    return table.concat(lines, "\n"), n
+end
+
+function Debug:BuildSpecsPanel()
+    local p = self.frame.specsPanel
+
+    local hint = p:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    hint:SetPoint("TOPLEFT", 0, -2)
+    hint:SetPoint("TOPRIGHT", 0, -2)
+    hint:SetJustifyH("LEFT")
+    hint:SetTextColor(0.7, 0.7, 0.7)
+    hint:SetText("Open a profession Spec page, then Scan. Export Lua for Data/Midnight/Specializations/.")
+
+    local scanBtn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
+    scanBtn:SetSize(100, 22)
+    scanBtn:SetPoint("TOPLEFT", 0, -28)
+    scanBtn:SetText("Scan Specs")
+    scanBtn:SetScript("OnClick", function()
+        self:DoSpecScan()
+    end)
+
+    local exportBtn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
+    exportBtn:SetSize(100, 22)
+    exportBtn:SetPoint("LEFT", scanBtn, "RIGHT", 8, 0)
+    exportBtn:SetText("Export Lua")
+    exportBtn:SetScript("OnClick", function()
+        self:DoSpecExport()
+    end)
+
+    local status = p:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    status:SetPoint("LEFT", exportBtn, "RIGHT", 12, 0)
+    status:SetTextColor(0.75, 0.75, 0.75)
+    status:SetText("No scan yet.")
+    self.specStatusFS = status
+
+    local scroll = CreateFrame("ScrollFrame", nil, p, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", 0, -56)
+    scroll:SetPoint("BOTTOMRIGHT", -28, 0)
+    local child = CreateFrame("Frame", nil, scroll)
+    child:SetSize(1, 1)
+    scroll:SetScrollChild(child)
+    self.specChild = child
+end
+
+function Debug:DoSpecScan()
+    local openName
+    if C_TradeSkillUI and C_TradeSkillUI.IsTradeSkillReady and C_TradeSkillUI.IsTradeSkillReady() then
+        local info = C_TradeSkillUI.GetBaseProfessionInfo and C_TradeSkillUI.GetBaseProfessionInfo()
+        if info and info.professionName then
+            openName = info.professionName
+        elseif info and info.parentProfessionName then
+            openName = info.parentProfessionName
+        end
+    end
+    -- Prefer selected codex profession if learned
+    local prof = openName
+    if not prof and addon.selectedSpecProf then
+        prof = addon.selectedSpecProf
+    end
+    if not prof then
+        -- try first learned with meta
+        local metaTable = private.ProgressMeta and private.ProgressMeta.professions
+        if metaTable and addon.IsProfessionLearned then
+            for name in pairs(metaTable) do
+                if addon:IsProfessionLearned(name) then
+                    prof = name
+                    break
+                end
+            end
+        end
+    end
+    if not prof then
+        private:Print("|cffff6666Open a profession window first, then Scan Specs.|r")
+        if self.specStatusFS then self.specStatusFS:SetText("|cffff6666Open a profession first.|r") end
+        return
+    end
+
+    -- Normalize "Midnight Inscription" style names
+    if type(prof) == "string" then
+        for short in pairs((private.ProgressMeta and private.ProgressMeta.professions) or {}) do
+            if strlower(prof):find(strlower(short), 1, true) then
+                prof = short
+                break
+            end
+        end
+    end
+
+    local scan, err = self:ScanLiveSpecs(prof)
+    if not scan then
+        private:Print("|cffff6666Spec scan failed:|r " .. tostring(err))
+        if self.specStatusFS then self.specStatusFS:SetText("|cffff6666" .. tostring(err) .. "|r") end
+        return
+    end
+    self.lastSpecScan = scan
+    local nodeCount = 0
+    for _, tr in ipairs(scan.trees or {}) do
+        nodeCount = nodeCount + #(tr.nodes or {})
+    end
+    private:Print(string.format(
+        "Spec scan |cff66ff99%s|r: %d trees, %d nodes, unspent %d",
+        prof, #(scan.trees or {}), nodeCount, scan.unspent or 0
+    ))
+    if self.specStatusFS then
+        self.specStatusFS:SetText(string.format("|cff66ff99%s|r — %d trees · %d nodes · unspent %d",
+            prof, #(scan.trees or {}), nodeCount, scan.unspent or 0))
+    end
+    self:RefreshSpecs()
+end
+
+function Debug:DoSpecExport()
+    if not self.lastSpecScan then
+        private:Print("|cffff6666Scan Specs first.|r")
+        return
+    end
+    local text, n = self:FormatSpecExport(self.lastSpecScan)
+    private:Print(string.format("Spec export: %d nodes — copy from the box.", n))
+    self:ShowExportBox(text)
+end
+
+function Debug:RefreshSpecs()
+    if not self.specChild then return end
+    local child = self.specChild
+    for _, c in pairs({ child:GetChildren() }) do
+        c:Hide()
+        c:SetParent(nil)
+    end
+    for _, r in pairs({ child:GetRegions() }) do
+        if r.SetText then r:Hide() end
+    end
+
+    local scan = self.lastSpecScan
+    if not scan then
+        local fs = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        fs:SetPoint("TOPLEFT", 4, -4)
+        fs:SetTextColor(0.6, 0.6, 0.6)
+        fs:SetText("Scan a profession to list paths and perks.")
+        child:SetSize(400, 40)
+        return
+    end
+
+    local y = 0
+    for _, tree in ipairs(scan.trees or {}) do
+        local head = child:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        head:SetPoint("TOPLEFT", 4, y)
+        head:SetText(string.format("|cffFFD700%s|r  (%d/%d KP)  tabID=%s root=%s",
+            tree.name or "?", tree.spentKP or 0, tree.maxKP or 0,
+            tostring(tree.tabID), tostring(tree.rootNodeID)))
+        y = y - 18
+        if tree.description and tree.description ~= "" then
+            local d = child:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            d:SetPoint("TOPLEFT", 8, y)
+            d:SetWidth(620)
+            d:SetJustifyH("LEFT")
+            d:SetTextColor(0.65, 0.65, 0.65)
+            d:SetText(tree.description:sub(1, 160))
+            y = y - 16
+        end
+        for _, node in ipairs(tree.nodes or {}) do
+            local row = child:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            row:SetPoint("TOPLEFT", 8 + (node.depth or 0) * 12, y)
+            row:SetWidth(640)
+            row:SetJustifyH("LEFT")
+            local tag = node.kind == "perk" and "|cff88aaffperk|r" or "|cff88cc88path|r"
+            row:SetText(string.format("%s %s  id=%d  ranks %d/%d  KP %d/%d  spell=%s",
+                tag,
+                node.name or "?",
+                node.pathID or 0,
+                node.currentRank or 0, node.maxRanks or 0,
+                node.spentKP or 0, node.maxKP or 0,
+                tostring(node.spellID or 0)
+            ))
+            y = y - 14
+        end
+        y = y - 8
+    end
+    child:SetSize(660, math.max(40, -y + 8))
+end
+
 
 -- Module init hook from Core
 function Debug:Initialize()

@@ -1530,8 +1530,49 @@ function addon:BuildProfessionSidebar(parent, opts)
             btn:SetBackdropBorderColor(0.35, 0.30, 0.18, 0.8)
         end
 
+        -- Profession icon (same texture as Leveling data P.icon)
+        local FALLBACK_ICONS = {
+            Alchemy = "Interface\\Icons\\Trade_Alchemy",
+            Blacksmithing = "Interface\\Icons\\Trade_BlackSmithing",
+            Cooking = "Interface\\Icons\\INV_Misc_Food_15",
+            Enchanting = "Interface\\Icons\\Trade_Engraving",
+            Engineering = "Interface\\Icons\\Trade_Engineering",
+            Fishing = "Interface\\Icons\\Trade_Fishing",
+            Herbalism = "Interface\\Icons\\Trade_Herbalism",
+            Inscription = "Interface\\Icons\\INV_Inscription_Tradeskill01",
+            Jewelcrafting = "Interface\\Icons\\INV_Misc_Gem_01",
+            Leatherworking = "Interface\\Icons\\INV_Misc_ArmorKit_17",
+            Mining = "Interface\\Icons\\Trade_Mining",
+            Skinning = "Interface\\Icons\\INV_Misc_Pelt_Wolf_01",
+            Tailoring = "Interface\\Icons\\Trade_Tailoring",
+        }
+        local iconPath
+        local pdata = private.Data and private.Data[name]
+        if type(pdata) == "table" and pdata.icon then
+            iconPath = pdata.icon
+        else
+            iconPath = FALLBACK_ICONS[name]
+        end
+
+        local icon = btn:CreateTexture(nil, "ARTWORK")
+        icon:SetSize(20, 20)
+        icon:SetPoint("LEFT", 8, 0)
+        if iconPath then
+            icon:SetTexture(iconPath)
+            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        else
+            icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+            icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        end
+        if showLearned and not isLearned then
+            icon:SetDesaturated(true)
+            icon:SetAlpha(0.55)
+        end
+
         local text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        text:SetPoint("CENTER", 0, (showLearned and not isLearned) and 5 or 0)
+        text:SetPoint("LEFT", icon, "RIGHT", 8, (showLearned and not isLearned) and 5 or 0)
+        text:SetPoint("RIGHT", -6, (showLearned and not isLearned) and 5 or 0)
+        text:SetJustifyH("LEFT")
         text:SetText(name)
         if isSelected then
             text:SetTextColor(1, 0.9, 0.5)
@@ -1541,7 +1582,7 @@ function addon:BuildProfessionSidebar(parent, opts)
 
         if showLearned and not isLearned then
             local tag = btn:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-            tag:SetPoint("TOP", text, "BOTTOM", 0, -2)
+            tag:SetPoint("LEFT", icon, "RIGHT", 8, -8)
             tag:SetText("Not learned")
         end
 

@@ -14,6 +14,11 @@ Locales/enUS.lua
 Data/Midnight/ProgressMeta.lua
 Data/Midnight/FirstCrafts.lua
 
+# Specialization guide data (builds + tree summaries)
+Data/Midnight/Specializations/Engineering.lua
+Data/Midnight/Specializations/Inscription.lua
+Data/Midnight/Specializations/Tailoring.lua
+
 
 # Leveling data (per profession) — includes name, icon, specializations
 Data/Midnight/Leveling/Alchemy.lua
