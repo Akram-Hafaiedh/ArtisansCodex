@@ -18,9 +18,18 @@ Data/Midnight/ProgressMeta.lua
 Data/Midnight/FirstCrafts.lua
 
 # Specialization guide data (builds + tree summaries)
+Data/Midnight/Specializations/Alchemy.lua
+Data/Midnight/Specializations/Blacksmithing.lua
+Data/Midnight/Specializations/Enchanting.lua
 Data/Midnight/Specializations/Engineering.lua
+Data/Midnight/Specializations/Herbalism.lua
 Data/Midnight/Specializations/Inscription.lua
+Data/Midnight/Specializations/Jewelcrafting.lua
+Data/Midnight/Specializations/Leatherworking.lua
+Data/Midnight/Specializations/Mining.lua
+Data/Midnight/Specializations/Skinning.lua
 Data/Midnight/Specializations/Tailoring.lua
+
 
 
 # Leveling data (per profession) — includes name, icon, specializations

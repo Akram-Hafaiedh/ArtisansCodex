@@ -1444,11 +1444,19 @@ local function SidebarGetProfessionNames(filter)
         elseif filter == "treasures" then
             include = hasData(name, "treasures")
         elseif filter == "specializations" then
-            local data = private.Data and private.Data[name]
-            if data and not data.isGathering and name ~= "Cooking" and name ~= "Fishing" then
+            -- Prefer live SpecGuideData (includes gathering: Mining/Herbalism/Skinning).
+            -- Fallback: non-gathering with leveling data, or legacy specializations table.
+            if name == "Cooking" or name == "Fishing" then
+                include = false
+            elseif private.SpecGuideData and private.SpecGuideData[name] then
                 include = true
             elseif hasData(name, "specializations") then
                 include = true
+            else
+                local data = private.Data and private.Data[name]
+                if data and not data.isGathering then
+                    include = true
+                end
             end
         else
             include = true
