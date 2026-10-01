@@ -256,6 +256,26 @@ function addon:BuildSpecializations()
         ry = ry - 60
     else
         for _, build in ipairs(builds) do
+            -- Completion: every step with a target has live spent >= target
+            local buildDone = false
+            if learned and build.steps and #build.steps > 0 then
+                buildDone = true
+                for _, step in ipairs(build.steps) do
+                    local target = step.points or 0
+                    if target > 0 and step.pathID and step.pathID > 0 then
+                        local prog = self:GetPathProgress(profName, step.pathID)
+                        local spent = prog and prog.spent or 0
+                        if spent < target then
+                            buildDone = false
+                            break
+                        end
+                    elseif target > 0 then
+                        buildDone = false
+                        break
+                    end
+                end
+            end
+
             local card = CreateFrame("Button", nil, right, "BackdropTemplate")
             card:SetSize(226, 40)
             card:SetPoint("TOP", 0, ry)
@@ -266,19 +286,37 @@ function addon:BuildSpecializations()
                 edgeSize = 1,
             })
             local active = selectedBuild and selectedBuild.key == build.key
-            if active then
+            if active and buildDone then
+                card:SetBackdropColor(0.10, 0.20, 0.12, 1)
+                card:SetBackdropBorderColor(0.35, 0.80, 0.45, 1)
+            elseif active then
                 card:SetBackdropColor(0.28, 0.22, 0.08, 1)
                 card:SetBackdropBorderColor(0.95, 0.80, 0.25, 1)
+            elseif buildDone then
+                card:SetBackdropColor(0.08, 0.14, 0.10, 0.95)
+                card:SetBackdropBorderColor(0.28, 0.50, 0.32, 0.9)
             else
                 card:SetBackdropColor(0.11, 0.12, 0.16, 0.95)
                 card:SetBackdropBorderColor(0.35, 0.35, 0.40, 0.8)
             end
+
             local nFS = card:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             nFS:SetPoint("TOPLEFT", 10, -6)
-            nFS:SetPoint("RIGHT", -8, 0)
+            nFS:SetPoint("RIGHT", buildDone and -52 or -8, 0)
             nFS:SetJustifyH("LEFT")
             nFS:SetText(build.name or build.key)
-            nFS:SetTextColor(1, 0.9, 0.55)
+            if buildDone then
+                nFS:SetTextColor(0.55, 0.85, 0.60)
+            else
+                nFS:SetTextColor(1, 0.9, 0.55)
+            end
+
+            if buildDone then
+                local doneFS = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+                doneFS:SetPoint("TOPRIGHT", -8, -6)
+                doneFS:SetText("|cff55cc77Done|r")
+            end
+
             -- Short goal on card; full summary in tooltip
             local gFS = card:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             gFS:SetPoint("TOPLEFT", 10, -22)
@@ -286,7 +324,12 @@ function addon:BuildSpecializations()
             gFS:SetJustifyH("LEFT")
             gFS:SetWordWrap(false)
             gFS:SetText(build.goal or "")
-            gFS:SetTextColor(0.68, 0.68, 0.68)
+            if buildDone then
+                gFS:SetTextColor(0.50, 0.62, 0.52)
+            else
+                gFS:SetTextColor(0.68, 0.68, 0.68)
+            end
+
             card:SetScript("OnClick", function()
                 self.selectedSpecBuildKey = build.key
                 self:BuildSpecializations()
@@ -294,6 +337,9 @@ function addon:BuildSpecializations()
             card:SetScript("OnEnter", function(b)
                 GameTooltip:SetOwner(b, "ANCHOR_LEFT")
                 GameTooltip:AddLine(build.name or "Build", 1, 0.85, 0.2)
+                if buildDone then
+                    GameTooltip:AddLine("Completed on this character", 0.4, 0.9, 0.55)
+                end
                 if build.goal and build.goal ~= "" then
                     GameTooltip:AddLine(build.goal, 0.85, 0.85, 0.75, true)
                 end
@@ -627,6 +673,30 @@ function addon:BuildSpecializations()
     div:SetPoint("TOPLEFT", 14, yTop)
     div:SetPoint("TOPRIGHT", -14, yTop)
 
+    -- Build progress: sum min(spent, target) over steps vs total target KP
+    local buildSpent, buildTarget, buildStepsDone, buildStepsTotal = 0, 0, 0, 0
+    if selectedBuild and selectedBuild.steps then
+        for _, step in ipairs(selectedBuild.steps) do
+            local target = step.points or 0
+            buildTarget = buildTarget + target
+            buildStepsTotal = buildStepsTotal + 1
+            local spentHere = 0
+            if learned and step.pathID and step.pathID > 0 then
+                local prog = self:GetPathProgress(profName, step.pathID)
+                if prog then
+                    spentHere = prog.spent or 0
+                end
+            end
+            local applied = target > 0 and math.min(spentHere, target) or 0
+            buildSpent = buildSpent + applied
+            if target > 0 and spentHere >= target then
+                buildStepsDone = buildStepsDone + 1
+            elseif target == 0 and spentHere > 0 then
+                buildStepsDone = buildStepsDone + 1
+            end
+        end
+    end
+
     local stepHdr = main:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     stepHdr:SetPoint("TOPLEFT", 14, yTop - 10)
     if selectedBuild then
@@ -636,6 +706,39 @@ function addon:BuildSpecializations()
     end
 
     local yAfterHdr = yTop - 28
+
+    -- Progress line + thin bar (right of header area)
+    if selectedBuild and buildTarget > 0 then
+        local frac = math.min(1, buildSpent / buildTarget)
+        local progLabel = main:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        progLabel:SetPoint("TOPRIGHT", -14, yTop - 10)
+        if buildSpent >= buildTarget then
+            progLabel:SetText(string.format("|cff55ee77%d / %d KP|r  (%d/%d steps)",
+                buildSpent, buildTarget, buildStepsDone, buildStepsTotal))
+        else
+            progLabel:SetText(string.format("|cffFFD700%d|r / %d KP  (%d/%d steps)",
+                buildSpent, buildTarget, buildStepsDone, buildStepsTotal))
+        end
+
+        local barW = 160
+        local barBg = main:CreateTexture(nil, "ARTWORK")
+        barBg:SetColorTexture(0.15, 0.15, 0.18, 0.9)
+        barBg:SetSize(barW, 6)
+        barBg:SetPoint("TOPRIGHT", -14, yTop - 26)
+
+        local barFill = main:CreateTexture(nil, "OVERLAY")
+        if frac >= 1 then
+            barFill:SetColorTexture(0.25, 0.75, 0.40, 0.95)
+        else
+            barFill:SetColorTexture(0.90, 0.72, 0.25, 0.95)
+        end
+        barFill:SetHeight(6)
+        barFill:SetWidth(math.max(2, barW * frac))
+        barFill:SetPoint("LEFT", barBg, "LEFT", 0, 0)
+
+        yAfterHdr = yTop - 38
+    end
+
     if selectedBuild and (selectedBuild.summary or selectedBuild.goal) then
         local sum = main:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         sum:SetPoint("TOPLEFT", 14, yAfterHdr)
@@ -648,26 +751,35 @@ function addon:BuildSpecializations()
         yAfterHdr = yAfterHdr - 22
     end
 
-    -- Column headers (fixed X so they match row values)
-    -- Columns: # @8, WHERE @28, LIVE @ right of where, NEED after LIVE
-    local COL_LIVE = 0.62   -- fraction of row width for LIVE left edge
-    local COL_NEED = 0.78   -- fraction of row width for NEED left edge
-    local colNum = main:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    colNum:SetPoint("TOPLEFT", 14, yAfterHdr)
+    -- Column headers: # | WHERE (flex) | LIVE | NEED — NEED/LIVE anchored from the right
+    local NEED_W, LIVE_W, COL_GAP = 48, 60, 10
+    local colHdr = CreateFrame("Frame", nil, main)
+    colHdr:SetPoint("TOPLEFT", 12, yAfterHdr)
+    colHdr:SetPoint("TOPRIGHT", -28, yAfterHdr)
+    colHdr:SetHeight(14)
+
+    local colNum = colHdr:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    colNum:SetPoint("LEFT", 6, 0)
     colNum:SetText("|cff888888#|r")
-    local colWhere = main:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    colWhere:SetPoint("TOPLEFT", 36, yAfterHdr)
-    colWhere:SetText("|cff888888WHERE|r")
-    local colLive = main:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    colLive:SetPoint("TOPLEFT", 12 + 280, yAfterHdr)
-    colLive:SetWidth(60)
-    colLive:SetJustifyH("RIGHT")
-    colLive:SetText("|cff888888LIVE|r")
-    local colNeed = main:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    colNeed:SetPoint("TOPLEFT", 12 + 350, yAfterHdr)
-    colNeed:SetWidth(48)
+
+    local colNeed = colHdr:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    colNeed:SetPoint("RIGHT", -4, 0)
+    colNeed:SetWidth(NEED_W)
     colNeed:SetJustifyH("RIGHT")
     colNeed:SetText("|cff888888NEED|r")
+
+    local colLive = colHdr:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    colLive:SetPoint("RIGHT", colNeed, "LEFT", -COL_GAP, 0)
+    colLive:SetWidth(LIVE_W)
+    colLive:SetJustifyH("RIGHT")
+    colLive:SetText("|cff888888LIVE|r")
+
+    local colWhere = colHdr:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    colWhere:SetPoint("LEFT", 28, 0)
+    colWhere:SetPoint("RIGHT", colLive, "LEFT", -COL_GAP, 0)
+    colWhere:SetJustifyH("LEFT")
+    colWhere:SetText("|cff888888WHERE|r")
+
     yAfterHdr = yAfterHdr - 14
 
     local scroll = CreateFrame("ScrollFrame", nil, main, "UIPanelScrollFrameTemplate")
@@ -675,18 +787,45 @@ function addon:BuildSpecializations()
     scroll:SetPoint("BOTTOMRIGHT", -28, 10)
 
     local list = CreateFrame("Frame", nil, scroll)
-    list:SetWidth(scroll:GetWidth() - 8)
+    list:SetWidth(1)
     list:SetHeight(1)
     scroll:SetScrollChild(list)
 
+    -- Keep list width in sync with scroll (handles first layout + resize)
+    local function SyncListWidth()
+        local w = scroll:GetWidth() or 0
+        if w > 16 then
+            list:SetWidth(w - 8)
+        end
+    end
+    scroll:HookScript("OnSizeChanged", SyncListWidth)
+    C_Timer.After(0, SyncListWidth)
+
     local steps = selectedBuild and selectedBuild.steps or {}
     local y = -4
-    local rowW = math.max(400, (scroll:GetWidth() or 500) - 16)
+
+    -- First incomplete step index (for NEXT highlight)
+    local nextStepIndex = nil
+    for i, step in ipairs(steps) do
+        local target = step.points or 0
+        local spent = 0
+        if learned and step.pathID and step.pathID > 0 then
+            local prog = self:GetPathProgress(profName, step.pathID)
+            if prog then spent = prog.spent or 0 end
+        end
+        local done = (target > 0 and spent >= target)
+            or (target == 0 and spent > 0)
+        if not done then
+            nextStepIndex = i
+            break
+        end
+    end
 
     for i, step in ipairs(steps) do
         local row = CreateFrame("Button", nil, list, "BackdropTemplate")
-        row:SetSize(rowW, 42)
+        row:SetHeight(42)
         row:SetPoint("TOPLEFT", 4, y)
+        row:SetPoint("TOPRIGHT", -4, y)
         row:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8x8",
             edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -701,10 +840,14 @@ function addon:BuildSpecializations()
         local spent = progress and progress.spent or 0
         local done = (target > 0 and spent >= target) or (progress and progress.max > 0 and spent >= progress.max and target == 0)
         local partial = spent > 0 and not done
+        local isNext = (nextStepIndex == i) and not done
 
         if done then
             row:SetBackdropColor(0.08, 0.16, 0.10, 0.95)
             row:SetBackdropBorderColor(0.25, 0.55, 0.30, 0.85)
+        elseif isNext then
+            row:SetBackdropColor(0.18, 0.15, 0.06, 0.98)
+            row:SetBackdropBorderColor(1.0, 0.82, 0.25, 1)
         elseif partial then
             row:SetBackdropColor(0.16, 0.14, 0.08, 0.95)
             row:SetBackdropBorderColor(0.70, 0.55, 0.20, 0.85)
@@ -715,51 +858,31 @@ function addon:BuildSpecializations()
 
         local num = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         num:SetPoint("LEFT", 8, 0)
-        num:SetText(tostring(i))
-        num:SetTextColor(0.85, 0.75, 0.4)
-
-        -- Tree icon for this spend step
-        local stepTree = FindTree(guide, step.tree)
-        local stepIcon = GetTreeIcon(stepTree)
-        local nameLeft = 28
-        if stepIcon then
-            local iconTex = row:CreateTexture(nil, "ARTWORK")
-            iconTex:SetSize(18, 18)
-            iconTex:SetPoint("LEFT", 26, 0)
-            iconTex:SetTexture(stepIcon)
-            iconTex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-            nameLeft = 48
-        end
-
-        local where = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        where:SetPoint("LEFT", nameLeft, 0)
-        -- Cap so long names never collide with LIVE (col at 280)
-        where:SetWidth(math.max(80, 270 - nameLeft))
-        where:SetJustifyH("LEFT")
-        local whereText
-        if step.tree and step.node and step.tree ~= step.node then
-            whereText = step.node
+        if isNext then
+            num:SetText("|cffFFD700>|r")
+            num:SetTextColor(1, 0.85, 0.3)
         else
-            whereText = step.node or step.tree or "?"
-        end
-        where:SetText(whereText)
-        where:SetWordWrap(false)
-        if done then
-            where:SetTextColor(0.55, 0.75, 0.55)
+            num:SetText(tostring(i))
+            num:SetTextColor(0.85, 0.75, 0.4)
         end
 
-        if step.tree and step.node and step.tree ~= step.node then
-            local treeTag = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-            treeTag:SetPoint("TOPLEFT", where, "BOTTOMLEFT", 0, 0)
-            treeTag:SetWidth(200)
-            treeTag:SetJustifyH("LEFT")
-            treeTag:SetText(step.tree)
+        if isNext then
+            local nextTag = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            nextTag:SetPoint("BOTTOMLEFT", 6, 3)
+            nextTag:SetText("|cffFFD700NEXT|r")
         end
 
-        -- LIVE / NEED: fixed columns, right-aligned numbers so ranks line up
+        -- NEED / LIVE anchored from the right so columns survive resize
+        local pts = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        pts:SetPoint("RIGHT", -8, 0)
+        pts:SetWidth(NEED_W)
+        pts:SetJustifyH("RIGHT")
+        pts:SetText("+" .. tostring(target))
+        pts:SetTextColor(0.45, 0.85, 0.55)
+
         local liveFS = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        liveFS:SetPoint("LEFT", 280, 0)
-        liveFS:SetWidth(60)
+        liveFS:SetPoint("RIGHT", pts, "LEFT", -COL_GAP, 0)
+        liveFS:SetWidth(LIVE_W)
         liveFS:SetJustifyH("RIGHT")
         if progress then
             local maxShow = progress.max or 0
@@ -776,18 +899,51 @@ function addon:BuildSpecializations()
             liveFS:SetTextColor(0.45, 0.45, 0.45)
         end
 
-        local pts = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        pts:SetPoint("LEFT", 350, 0)
-        pts:SetWidth(48)
-        pts:SetJustifyH("RIGHT")
-        pts:SetText("+" .. tostring(target))
-        pts:SetTextColor(0.45, 0.85, 0.55)
+        -- Tree icon for this spend step
+        local stepTree = FindTree(guide, step.tree)
+        local stepIcon = GetTreeIcon(stepTree)
+        local nameLeft = 28
+        if stepIcon then
+            local iconTex = row:CreateTexture(nil, "ARTWORK")
+            iconTex:SetSize(18, 18)
+            iconTex:SetPoint("LEFT", 26, 0)
+            iconTex:SetTexture(stepIcon)
+            iconTex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+            nameLeft = 48
+        end
+
+        local where = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        where:SetPoint("LEFT", nameLeft, 0)
+        where:SetPoint("RIGHT", liveFS, "LEFT", -COL_GAP, 0)
+        where:SetJustifyH("LEFT")
+        local whereText
+        if step.tree and step.node and step.tree ~= step.node then
+            whereText = step.node
+        else
+            whereText = step.node or step.tree or "?"
+        end
+        where:SetText(whereText)
+        where:SetWordWrap(false)
+        if done then
+            where:SetTextColor(0.55, 0.75, 0.55)
+        end
+
+        if step.tree and step.node and step.tree ~= step.node then
+            local treeTag = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+            treeTag:SetPoint("TOPLEFT", where, "BOTTOMLEFT", 0, 0)
+            treeTag:SetPoint("RIGHT", liveFS, "LEFT", -COL_GAP, 0)
+            treeTag:SetJustifyH("LEFT")
+            treeTag:SetText(step.tree)
+        end
 
         local stepTab = stepTree and stepTree.tabID or 0
 
         row:SetScript("OnEnter", function(b)
             GameTooltip:SetOwner(b, "ANCHOR_CURSOR")
             GameTooltip:AddLine(whereText, 1, 0.85, 0.2)
+            if isNext then
+                GameTooltip:AddLine("Next recommended spend", 1, 0.85, 0.3)
+            end
             GameTooltip:AddLine("Target +" .. tostring(target) .. " knowledge", 0.45, 0.85, 0.55)
             if progress then
                 GameTooltip:AddLine(string.format(
@@ -824,7 +980,8 @@ function addon:BuildSpecializations()
         no:SetText("No steps defined for this build yet.")
         y = y - 24
     end
-    list:SetSize(rowW, math.max(40, -y + 8))
+    list:SetHeight(math.max(40, -y + 8))
+    SyncListWidth()
 
     scroll:EnableMouseWheel(true)
     scroll:SetScript("OnMouseWheel", function(f, delta)
