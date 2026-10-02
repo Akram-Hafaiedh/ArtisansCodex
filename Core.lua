@@ -99,11 +99,10 @@ function addon:GetLearnedSkillLineID(professionName)
         local idx = indices[i]
         if idx then
             local name, _, _, _, _, _, skillLine = GetProfessionInfo(idx)
-            if type(name) ~= "string" then
-                -- continue
-            elseif name == professionName then
-                return skillLine
-            else
+            if type(name) == "string" then
+                if name == professionName then
+                    return skillLine
+                else
                 -- Expansion-prefixed skill lines (e.g. "Midnight Cooking")
                 local bare = name:match("Midnight%s+(.+)$")
                     or name:match("Khaz Algar%s+(.+)$")
@@ -114,7 +113,8 @@ function addon:GetLearnedSkillLineID(professionName)
                     or name:match("Legion%s+(.+)$")
                 if bare and bare == professionName then
                     return skillLine
-                end
+                    end
+            end
                 -- Secondary professions: name often still contains the base word
                 if (professionName == "Cooking"
                     or professionName == "Fishing"
@@ -293,7 +293,7 @@ function addon:CreateStatusMeter(parent, opts)
     text:SetJustifyH("CENTER")
     f.text = text
 
-    function f:SetValues(val, maxV, extra)
+    function f.SetValues(_, val, maxV, extra)
         val = tonumber(val) or 0
         maxV = tonumber(maxV) or 0
         local ratio = 0
@@ -701,14 +701,11 @@ function addon:ScanFirstCrafts()
 
                 -- Quest flags are authoritative when the catalog provides them
                 if type(entry.quests) == "table" and #entry.quests > 0 then
-                    local allDone = true
                     local anyDone = false
                     for _, qid in ipairs(entry.quests) do
                         if IsQuestComplete(qid) then
                             anyDone = true
                             char.completedQuests[qid] = true
-                        else
-                            allDone = false
                         end
                     end
                     -- Most first-craft entries use a single quest; treat any completion as claimed
@@ -1054,8 +1051,8 @@ function addon:CreateMainFrame()
             private:Print("Debug module not loaded.")
         end
     end)
-    debugBtn:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+    debugBtn:SetScript("OnEnter", function(btn)
+        GameTooltip:SetOwner(btn, "ANCHOR_BOTTOM")
         GameTooltip:AddLine("Debug", 1, 0.85, 0.2)
         GameTooltip:AddLine("Log console and live profession recipe audit.", 0.8, 0.8, 0.8, true)
         GameTooltip:AddLine("Also: /ac debug", 0.55, 0.55, 0.55)
@@ -1074,8 +1071,8 @@ function addon:CreateMainFrame()
             private.Progress:Toggle()
         end
     end)
-    progressBtn:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+    progressBtn:SetScript("OnEnter", function(btn)
+        GameTooltip:SetOwner(btn, "ANCHOR_BOTTOM")
         GameTooltip:AddLine("Artisan's Progress", 1, 0.85, 0.2)
         GameTooltip:AddLine("Account-wide profession heatmap for all characters.", 0.8, 0.8, 0.8, true)
         GameTooltip:AddLine("Data from this scan also feeds meters on Leveling & Knowledge.", 0.65, 0.65, 0.65, true)

@@ -41,16 +41,15 @@ local function IsDarkmoonActive()
     local active = false
     if C_Calendar and C_Calendar.GetNumDayEvents and C_DateAndTime and C_DateAndTime.GetCurrentCalendarTime then
         local now = C_DateAndTime.GetCurrentCalendarTime()
-        local month = now.month
-        local year = now.year
+        -- Calendar offset 0 uses the current month; month/year only needed for multi-month scans
         -- scan a few days around today
         for day = math.max(1, (now.monthDay or 1) - 3), math.min(31, (now.monthDay or 1) + 7) do
             local n = C_Calendar.GetNumDayEvents(0, day) -- 0 = current month offset
             if type(n) == "number" then
                 for i = 1, n do
                     local info = C_Calendar.GetDayEvent and C_Calendar.GetDayEvent(0, day, i)
-                    local title = info and (info.title or info.Title or "") or ""
-                    if type(title) == "string" and title:lower():find("darkmoon") then
+                    local eventTitle = info and (info.title or info.Title or "") or ""
+                    if type(eventTitle) == "string" and eventTitle:lower():find("darkmoon") then
                         active = true
                         break
                     end
@@ -202,7 +201,7 @@ end
 --- Rich tooltip body for a heatmap cell
 local function CellTooltip(key, char, prof)
     local lines = {}
-    local title = nil
+    local title
     local live = char and char.guid == addon:GetPlayerGUID()
 
     local function add(text, r, g, b)
@@ -500,12 +499,12 @@ local function MakeToolbarButton(parent, opts)
         btn.label = fs
     end
 
-    btn:SetScript("OnEnter", function(self)
-        self.bg:SetColorTexture(0.22, 0.20, 0.12, 1)
-        self.inner:SetColorTexture(0.18, 0.16, 0.10, 1)
-        self.border:SetColorTexture(0.85, 0.70, 0.25, 1)
+    btn:SetScript("OnEnter", function(b)
+        b.bg:SetColorTexture(0.22, 0.20, 0.12, 1)
+        b.inner:SetColorTexture(0.18, 0.16, 0.10, 1)
+        b.border:SetColorTexture(0.85, 0.70, 0.25, 1)
         if opts.tooltipTitle then
-            GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+            GameTooltip:SetOwner(b, "ANCHOR_BOTTOM")
             GameTooltip:AddLine(opts.tooltipTitle, 1, 0.85, 0.2)
             if opts.tooltipBody then
                 GameTooltip:AddLine(opts.tooltipBody, 0.8, 0.8, 0.8, true)
@@ -525,15 +524,6 @@ local function MakeToolbarButton(parent, opts)
     return btn
 end
 
--- Backwards-compatible wrapper used nowhere else after toolbar rewrite
-local function MakeIconButton(parent, texture, tooltipTitle, tooltipBody, onClick)
-    return MakeToolbarButton(parent, {
-        texture = texture,
-        tooltipTitle = tooltipTitle,
-        tooltipBody = tooltipBody,
-        onClick = onClick,
-    })
-end
 
 function Progress:CreateFrame()
     if self.frame then return self.frame end
@@ -751,7 +741,7 @@ function Progress:Refresh()
         fs:SetText("|cffFFD700" .. col.label .. "|r")
         cell:EnableMouse(true)
         local colKey = col.key
-        cell:SetScript("OnEnter", function(self)
+        cell:SetScript("OnEnter", function(btn)
             local tip = HEADER_TIPS[colKey]
             if tip then
                 ShowTip(self, col.label, { { text = tip, r = 0.75, g = 0.75, b = 0.75 } })
@@ -803,7 +793,7 @@ function Progress:Refresh()
 
             cell:EnableMouse(true)
             local tipKey, tipChar, tipProf = col.key, char, prof
-            cell:SetScript("OnEnter", function(self)
+            cell:SetScript("OnEnter", function(btn)
                 local title, lines = CellTooltip(tipKey, tipChar, tipProf)
                 if title or (lines and #lines > 0) then
                     ShowTip(self, title, lines)
@@ -921,8 +911,8 @@ function Progress:RefreshCharPanel()
         cb:SetSize(20, 20)
         cb:SetPoint("LEFT", 0, 0)
         cb:SetChecked(addon:IsCharacterTracked(guid))
-        cb:SetScript("OnClick", function(self)
-            addon:SetCharacterTracked(guid, self:GetChecked())
+        cb:SetScript("OnClick", function(check)
+            addon:SetCharacterTracked(guid, check:GetChecked())
             Progress:Refresh()
         end)
 
@@ -1022,8 +1012,8 @@ function Progress:RefreshColPanel()
             cb:SetSize(20, 20)
             cb:SetPoint("LEFT", 0, 0)
             cb:SetChecked(addon:IsCardChipVisible(key))
-            cb:SetScript("OnClick", function(self)
-                addon:SetCardChipVisible(key, self:GetChecked())
+            cb:SetScript("OnClick", function(check)
+                addon:SetCardChipVisible(key, check:GetChecked())
                 Progress:Refresh()
             end)
 

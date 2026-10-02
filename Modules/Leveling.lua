@@ -186,13 +186,6 @@ function addon:BuildLeveling()
     local snap = self.GetProfessionSnapshot and self:GetProfessionSnapshot(self.selectedLevelingProf)
     local skillCur = snap and snap.skillLevel or 0
     local skillMax = snap and snap.skillMaxLevel or 0
-    if (skillMax or 0) == 0 and self.IsProfessionLearned and self:IsProfessionLearned(self.selectedLevelingProf) then
-        -- fallback live API if snapshot empty
-        local skillLineID = self.GetLearnedSkillLineID and self:GetLearnedSkillLineID(self.selectedLevelingProf)
-        if skillLineID and GetProfessionInfo then
-            -- skill levels already on snapshot after scan; leave zeros if unknown
-        end
-    end
     if self.CreateStatusMeter then
         local skillMeter = self:CreateStatusMeter(leftCol, {
             width = 220,

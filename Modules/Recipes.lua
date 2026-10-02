@@ -1,7 +1,7 @@
 -- ArtisansCodex Recipes module
 -- In-game recipe browser (search, filters, reagents, learned/missing)
 
-local addonName, private = ...
+local _, private = ...
 private.Recipes = private.Recipes or {}
 local Recipes = private.Recipes
 

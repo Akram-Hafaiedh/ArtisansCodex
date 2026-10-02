@@ -1,7 +1,7 @@
 -- ArtisansCodex Debug module
 -- Log console + live profession recipe audit (import / diff / export)
 
-local addonName, private = ...
+local _, private = ...
 private.Debug = private.Debug or {}
 local Debug = private.Debug
 
@@ -239,8 +239,6 @@ local function CollectReagents(recipeID)
                 itemID = rid,
                 amount = slot.quantityRequired or 1,
             }
-        elseif slot.dataSlotType and slot.slotInfo and slot.slotInfo.mcrSlotID then
-            -- modified crafting slot — skip for catalog
         end
     end
     return reagents
@@ -479,17 +477,13 @@ function Debug:BuildDiff(profName, liveList)
             -- Soft-only notes (category / source) should not force hard Mismatch
             if status == "Mismatch" then
                 local hard = 0
-                local onlySource = true
-                for _, iss in ipairs(issues) do
-                    if iss:find("^category ", 1)
+                                for _, iss in ipairs(issues) do
+                    local soft = iss:find("^category ", 1)
                         or iss:find("^catalog missing source", 1)
                         or iss:find("^placeholder source", 1)
                         or iss:find("^source format", 1)
-                    then
-                        -- soft
-                    else
+                    if not soft then
                         hard = hard + 1
-                        onlySource = false
                     end
                 end
                 if hard == 0 then

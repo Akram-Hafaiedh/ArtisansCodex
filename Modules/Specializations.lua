@@ -212,21 +212,6 @@ function addon:BuildSpecializations()
         self.selectedSpecBuildKey = selectedBuild.key
     end
 
-    -- Tab for Open Spec: first step's tree, else first guide tree
-    local openTabID = 0
-    if selectedBuild and selectedBuild.steps then
-        for _, step in ipairs(selectedBuild.steps) do
-            local t = FindTree(guide, step.tree)
-            if t and t.tabID and t.tabID > 0 then
-                openTabID = t.tabID
-                break
-            end
-        end
-    end
-    if openTabID == 0 and trees[1] and trees[1].tabID then
-        openTabID = trees[1].tabID
-    end
-
     -- ========== RIGHT: goals + actions ==========
     local right = CreateFrame("Frame", nil, page, "BackdropTemplate")
     right:SetPoint("TOPRIGHT", -12, -12)
@@ -445,7 +430,7 @@ function addon:BuildSpecializations()
         emptyRel:SetText("No linked recipes for this goal.\nTrees may still list notables after data updates.")
         ly = ly - 20
     else
-        for i, rec in ipairs(related) do
+        for _, rec in ipairs(related) do
             local entry = ResolveRecipeEntry(profName, rec.spellID, rec.name)
             local itemID = entry and entry.itemID or 0
             local displayName = (entry and entry.name) or rec.name

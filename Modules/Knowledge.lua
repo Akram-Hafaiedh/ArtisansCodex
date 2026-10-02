@@ -120,8 +120,9 @@ end
 
 -- Pure item tooltip (do not mix with AddLine — that breaks layout)
 local function ShowItemTooltip(owner, itemID)
-    if not itemID then return end
-    -- Anchor close to the hovered frame (icon/name area), not far across the UI
+    if not itemID or not owner then return end
+    -- Must be a frame/region — never the addon table
+    if type(owner) ~= "table" or not owner.GetName then return end
     GameTooltip:SetOwner(owner, "ANCHOR_RIGHT", 6, 0)
     GameTooltip:SetItemByID(itemID)
     GameTooltip:Show()
@@ -254,20 +255,6 @@ function addon:BuildKnowledge()
         return row
     end
 
-    local function AddIcon(parent, itemID, size)
-        size = size or 28
-        local tex = parent:CreateTexture(nil, "ARTWORK")
-        tex:SetSize(size, size)
-        tex:SetTexture(ItemIconTexture(itemID))
-        if itemID then
-            parent:EnableMouse(true)
-            parent:SetScript("OnEnter", function(self)
-                ShowItemTooltip(self, itemID)
-            end)
-            parent:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        end
-        return tex
-    end
 
     -- ---------- HEADER + TAB LINKS ----------
     local header = CreateFrame("Frame", nil, content, "BackdropTemplate")
@@ -443,8 +430,8 @@ function addon:BuildKnowledge()
             hit:SetPoint("BOTTOMLEFT", icon, "BOTTOMLEFT", -4, -4)
             hit:SetPoint("RIGHT", nameFS, "RIGHT", 12, 0)
             hit:EnableMouse(true)
-            hit:SetScript("OnEnter", function(self)
-                ShowItemTooltip(self, o.itemID)
+            hit:SetScript("OnEnter", function(btn)
+                ShowItemTooltip(btn, o.itemID)
             end)
             hit:SetScript("OnLeave", function() GameTooltip:Hide() end)
         end
@@ -551,11 +538,11 @@ function addon:BuildKnowledge()
                 hit:SetPoint("BOTTOMLEFT", icon, "BOTTOMLEFT", -4, -4)
                 hit:SetPoint("RIGHT", nameFS, "RIGHT", 12, 0)
                 hit:EnableMouse(true)
-                hit:SetScript("OnEnter", function(self)
+                hit:SetScript("OnEnter", function(btn)
                     if treasure.itemID then
-                        ShowItemTooltip(self, treasure.itemID)
+                        ShowItemTooltip(btn, treasure.itemID)
                     else
-                        GameTooltip:SetOwner(self, "ANCHOR_RIGHT", 6, 0)
+                        GameTooltip:SetOwner(btn, "ANCHOR_RIGHT", 6, 0)
                         GameTooltip:AddLine(treasure.name or "?", 1, 0.85, 0.2)
                         if treasure.description then
                             GameTooltip:AddLine(treasure.description, 0.9, 0.9, 0.9, true)
@@ -642,8 +629,8 @@ function addon:BuildKnowledge()
             hit:SetPoint("BOTTOMLEFT", firstIcon, "BOTTOMLEFT", -4, -4)
             hit:SetPoint("RIGHT", nameFS, "RIGHT", 12, 0)
             hit:EnableMouse(true)
-            hit:SetScript("OnEnter", function(self)
-                ShowItemTooltip(self, primaryID)
+            hit:SetScript("OnEnter", function(btn)
+                ShowItemTooltip(btn, primaryID)
             end)
             hit:SetScript("OnLeave", function() GameTooltip:Hide() end)
         end

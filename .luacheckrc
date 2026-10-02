@@ -1,64 +1,90 @@
 -- Artisan's Codex — luacheck configuration
--- Docs: https://luacheck.readthedocs.io/en/stable/config.html
-
 std = "lua51"
 max_line_length = 500
 
--- WoW addon files start with:
---   local addonName, private = ...
--- Luacheck treats these as locals and warns if unused. We control the
--- convention per-file with `local _, private = ...` when addonName isn't
--- needed, so no global ignore is applied here.
+-- One-line recipe tables (Windows + Unix path forms)
+files["Data/Midnight/Recipes"] = { max_line_length = false }
+files["Data/Midnight/Recipes/"] = { max_line_length = false }
+files["Data\\Midnight\\Recipes"] = { max_line_length = false }
+files["Data\\Midnight\\Recipes\\"] = { max_line_length = false }
+
+ignore = {
+    "212", -- unused argument
+    "213", -- unused loop variable
+}
+
+exclude_files = {
+    "Libs/",
+    "Libs",
+}
 
 globals = {
-    -- Public addon global (set via `_G[addonName] = addon`)
     "ArtisansCodex",
-
-    -- Slash command registration
     "SLASH_ARTISANSCODEX1",
     "SLASH_ARTISANSCODEX2",
     "SLASH_ARTISANSCODEX3",
     "SlashCmdList",
-
-    -- Blizzard state tables we read and write
     "g_professionsSpecsSelectedTabs",
+    "UISpecialFrames",
 }
 
 read_globals = {
-    -- Saved variables
     "ArtisansCodexDB",
-
-    -- Frame / UI creation
     "CreateFrame",
     "CreateVector2D",
     "UIParent",
     "Minimap",
     "GameTooltip",
     "WorldFrame",
-
-    -- WoW API namespaces
+    "UISpecialFrames",
+    "GameFontHighlightSmall",
+    "GameFontNormal",
+    "GameFontNormalLarge",
+    "GameFontNormalSmall",
+    "GameFontHighlight",
+    "GameFontDisableSmall",
+    "UIPanelButtonTemplate",
+    "UIPanelScrollFrameTemplate",
+    "BackdropTemplate",
     "C_AddOns",
+    "C_Calendar",
     "C_CraftingOrders",
+    "C_CurrencyInfo",
+    "C_DateAndTime",
     "C_Item",
     "C_Map",
     "C_Professions",
     "C_ProfSpecs",
     "C_QuestLog",
+    "C_Spell",
     "C_SuperTrack",
     "C_Timer",
     "C_TradeSkillUI",
-
-    -- Free functions
+    "C_Traits",
+    "UnitGUID",
+    "UnitName",
+    "UnitLevel",
+    "UnitClass",
+    "GetNormalizedRealmName",
+    "GetRealmName",
+    "InCombatLockdown",
+    "GetServerTime",
+    "GetTime",
+    "time",
+    "date",
     "GetProfessions",
     "GetProfessionInfo",
     "GetItemInfo",
     "GetItemIcon",
     "GetItemQualityColor",
     "ITEM_QUALITY_COLORS",
+    "GetSpellInfo",
+    "GetSpellTexture",
+    "GetCoinTextureString",
+    "Item",
+    "RAID_CLASS_COLORS",
     "GetLocale",
     "ReloadUI",
-
-    -- String / table helpers
     "strtrim",
     "strlower",
     "strupper",
@@ -66,16 +92,6 @@ read_globals = {
     "tinsert",
     "tremove",
     "wipe",
-
-    -- Debug
     "print",
     "DEFAULT_CHAT_FRAME",
-}
-
-ignore = {
-    "212", -- unused argument (frame callbacks often ignore the frame arg)
-}
-
-exclude_files = {
-    "Libs",
 }
