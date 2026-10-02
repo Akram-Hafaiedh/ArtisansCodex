@@ -246,14 +246,27 @@ function addon:BuildSpecializations()
     rightTitle:SetText("|cffFFD700Choose a goal|r")
 
     local ry = -34
+    if #builds > 0 then
+        local countFS = right:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+        countFS:SetPoint("TOPRIGHT", -12, -14)
+        countFS:SetText(string.format("%d", #builds))
+        ry = -36
+    end
     if #builds == 0 then
         local emptyR = right:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         emptyR:SetPoint("TOPLEFT", 12, ry)
         emptyR:SetPoint("RIGHT", -12, 0)
         emptyR:SetJustifyH("LEFT")
-        emptyR:SetTextColor(0.6, 0.6, 0.6)
-        emptyR:SetText("No builds yet.\nUse Debug -> Specs\nto export trees, then\nadd builds in data.")
-        ry = ry - 60
+        emptyR:SetWordWrap(true)
+        emptyR:SetTextColor(0.62, 0.62, 0.65)
+        if not guide then
+            emptyR:SetText("No specialization guide for this profession yet.\n\nData is still being added.")
+        elseif not learned then
+            emptyR:SetText("No recommended goals listed.\n\nYou can still browse once builds are added — learning the profession is not required to read the guide.")
+        else
+            emptyR:SetText("No recommended goals for this profession yet.\n\nTrees may still appear in the center panel.")
+        end
+        ry = ry - 72
     else
         for _, build in ipairs(builds) do
             -- Completion: every step with a target has live spent >= target
@@ -279,7 +292,7 @@ function addon:BuildSpecializations()
             local card = CreateFrame("Button", nil, right, "BackdropTemplate")
             card:SetSize(226, 40)
             card:SetPoint("TOP", 0, ry)
-            ry = ry - 46
+            ry = ry - 42
             card:SetBackdrop({
                 bgFile = "Interface\\Buttons\\WHITE8x8",
                 edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -382,30 +395,35 @@ function addon:BuildSpecializations()
     end
 
     -- Divider under goals
-    ry = ry - 8
+    ry = ry - 6
     local divR = right:CreateTexture(nil, "ARTWORK")
-    divR:SetColorTexture(0.45, 0.38, 0.2, 0.5)
+    divR:SetColorTexture(0.40, 0.35, 0.22, 0.45)
     divR:SetHeight(1)
     divR:SetPoint("TOPLEFT", 12, ry)
     divR:SetPoint("TOPRIGHT", -12, ry)
-    ry = ry - 14
+    ry = ry - 12
 
     local relTitle = right:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     relTitle:SetPoint("TOPLEFT", 12, ry)
-    relTitle:SetText("|cffFFD700Related crafts|r")
-    ry = ry - 18
+    if #related > 0 then
+        relTitle:SetText(string.format("|cffFFD700Related crafts|r  |cff666666%d|r", #related))
+    else
+        relTitle:SetText("|cffFFD700Related crafts|r")
+    end
+    ry = ry - 16
 
-    if selectedBuild and (selectedBuild.summary or selectedBuild.goal) then
+    -- Avoid repeating the card goal; only show a distinct summary line
+    if selectedBuild and selectedBuild.summary and selectedBuild.summary ~= ""
+        and selectedBuild.summary ~= selectedBuild.goal then
         local relSum = right:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         relSum:SetPoint("TOPLEFT", 12, ry)
         relSum:SetPoint("RIGHT", -12, 0)
         relSum:SetJustifyH("LEFT")
-        relSum:SetTextColor(0.65, 0.65, 0.65)
+        relSum:SetTextColor(0.58, 0.58, 0.60)
         relSum:SetWordWrap(true)
-        local gtxt = selectedBuild.goal or selectedBuild.summary or ""
-        gtxt = gtxt:gsub("→", "->"):gsub("—", "-"):gsub("–", "-")
+        local gtxt = selectedBuild.summary:gsub("→", "->"):gsub("—", "-"):gsub("–", "-")
         relSum:SetText(gtxt)
-        ry = ry - 28
+        ry = ry - 22
     end
 
     -- Scrollable related-crafts list (fills rest of right panel)
@@ -424,7 +442,7 @@ function addon:BuildSpecializations()
         emptyRel:SetPoint("TOPLEFT", 4, ly)
         emptyRel:SetPoint("RIGHT", -4, 0)
         emptyRel:SetJustifyH("LEFT")
-        emptyRel:SetText("No linked recipes for this goal yet.")
+        emptyRel:SetText("No linked recipes for this goal.\nTrees may still list notables after data updates.")
         ly = ly - 20
     else
         for i, rec in ipairs(related) do
@@ -540,138 +558,211 @@ function addon:BuildSpecializations()
     local summary = main:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     summary:SetPoint("TOPLEFT", 14, -32)
     summary:SetTextColor(0.7, 0.7, 0.7)
-    if not learned then
-        summary:SetText("|cffff8866Not learned on this character.|r You can still browse recommended builds.")
+    if not guide then
+        summary:SetText("|cffaaaaaaNo specialization data for this profession yet.|r")
+    elseif not learned then
+        summary:SetText("|cffff9966Not learned on this character.|r Browse goals and trees below — live progress needs the profession.")
     elseif kp then
         summary:SetText(string.format(
-            "Knowledge spent |cffFFD700%d|r / |cffaaaaaa%d|r  .  Unspent |cff66ccff%d|r",
+            "Knowledge spent |cffFFD700%d|r / |cffaaaaaa%d|r  ·  Unspent |cff66ccff%d|r",
             kp.spent or 0, kp.max or 0, kp.unspent or 0
         ))
     else
-        summary:SetText("Open this profession once to load live knowledge totals.")
+        summary:SetText("|cff88aaccOpen this profession once|r so live knowledge totals and path progress can load.")
     end
 
     local yTop = -52
 
-    -- Tree overview chips (2 per row so they never spill into the goal panel)
+    -- Empty / partial guide states (center)
+    if not guide then
+        local box = CreateFrame("Frame", nil, main, "BackdropTemplate")
+        box:SetPoint("TOPLEFT", 20, yTop - 8)
+        box:SetPoint("TOPRIGHT", -20, yTop - 8)
+        box:SetHeight(88)
+        box:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 1,
+        })
+        box:SetBackdropColor(0.09, 0.10, 0.13, 0.95)
+        box:SetBackdropBorderColor(0.35, 0.32, 0.28, 0.7)
+
+        local h = box:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        h:SetPoint("TOPLEFT", 14, -14)
+        h:SetText("|cffFFD700Guide not ready|r")
+
+        local b = box:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        b:SetPoint("TOPLEFT", 14, -34)
+        b:SetPoint("RIGHT", -14, 0)
+        b:SetJustifyH("LEFT")
+        b:SetTextColor(0.68, 0.68, 0.70)
+        b:SetWordWrap(true)
+        b:SetText("Specialization builds and trees for " .. (profName or "this profession") .. " are not in the addon yet. Pick another profession from the sidebar, or check back after a data update.")
+        yTop = yTop - 104
+    elseif #trees == 0 and #builds == 0 then
+        local box = CreateFrame("Frame", nil, main, "BackdropTemplate")
+        box:SetPoint("TOPLEFT", 20, yTop - 8)
+        box:SetPoint("TOPRIGHT", -20, yTop - 8)
+        box:SetHeight(72)
+        box:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 1,
+        })
+        box:SetBackdropColor(0.09, 0.10, 0.13, 0.95)
+        box:SetBackdropBorderColor(0.35, 0.32, 0.28, 0.7)
+
+        local h = box:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        h:SetPoint("TOPLEFT", 14, -12)
+        h:SetText("|cffFFD700Nothing to show yet|r")
+
+        local b = box:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        b:SetPoint("TOPLEFT", 14, -32)
+        b:SetPoint("RIGHT", -14, 0)
+        b:SetJustifyH("LEFT")
+        b:SetTextColor(0.68, 0.68, 0.70)
+        b:SetWordWrap(true)
+        b:SetText("This profession has a data stub but no trees or recommended goals. Other professions in the sidebar may be complete.")
+        yTop = yTop - 88
+    elseif not learned then
+        local note = main:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        note:SetPoint("TOPLEFT", 14, yTop)
+        note:SetPoint("RIGHT", -14, 0)
+        note:SetJustifyH("LEFT")
+        note:SetTextColor(0.75, 0.72, 0.55)
+        note:SetWordWrap(true)
+        note:SetText("|cffffaa66Browse mode:|r goals and trees are visible. LIVE path progress and Open require learning " .. (profName or "this profession") .. " on this character.")
+        yTop = yTop - 28
+    end
+
+    -- Section: Trees (full-width rows)
     if #trees > 0 then
-        local chipW, chipH, gap = 188, 38, 6
-        local chipX, chipY, col = 14, yTop, 0
+        local secTrees = main:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        secTrees:SetPoint("TOPLEFT", 14, yTop)
+        secTrees:SetText("|cff888888TREES|r")
+        yTop = yTop - 16
+
+        local rowH, gap = 26, 3
         for _, tree in ipairs(trees) do
-            local chip = CreateFrame("Button", nil, main, "BackdropTemplate")
-            chip:SetSize(chipW, chipH)
-            chip:SetPoint("TOPLEFT", chipX, chipY)
-            col = col + 1
-            if col >= 2 then
-                col = 0
-                chipX = 14
-                chipY = chipY - chipH - gap
-            else
-                chipX = chipX + chipW + gap
-            end
-            chip:SetBackdrop({
+            local row = CreateFrame("Button", nil, main, "BackdropTemplate")
+            row:SetHeight(rowH)
+            row:SetPoint("TOPLEFT", 14, yTop)
+            row:SetPoint("TOPRIGHT", -14, yTop)
+            row:SetBackdrop({
                 bgFile = "Interface\\Buttons\\WHITE8x8",
                 edgeFile = "Interface\\Buttons\\WHITE8x8",
                 edgeSize = 1,
             })
-            chip:SetBackdropColor(0.12, 0.13, 0.18, 0.95)
-            chip:SetBackdropBorderColor(0.35, 0.32, 0.25, 0.85)
+            row:SetBackdropColor(0.10, 0.11, 0.15, 0.9)
+            row:SetBackdropBorderColor(0.28, 0.28, 0.32, 0.7)
 
-            -- Spec tree icon (live from tab info when possible)
             local iconID = GetTreeIcon(tree)
-            local textLeft = 6
-            local textRight = -4
+            local textLeft = 8
             if iconID then
-                local iconTex = chip:CreateTexture(nil, "ARTWORK")
-                iconTex:SetSize(22, 22)
-                iconTex:SetPoint("LEFT", 5, 0)
+                local iconTex = row:CreateTexture(nil, "ARTWORK")
+                iconTex:SetSize(18, 18)
+                iconTex:SetPoint("LEFT", 6, 0)
                 iconTex:SetTexture(iconID)
                 iconTex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-                textLeft = 32
+                textLeft = 30
             end
-            -- Explicit Open (chip body is not a navigation click)
+
+            local textRight = -8
             if learned and tree.tabID and tree.tabID > 0 then
-                local openBtn = CreateFrame("Button", nil, chip, "UIPanelButtonTemplate")
-                openBtn:SetSize(40, 18)
-                openBtn:SetPoint("RIGHT", -3, 0)
+                local openBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
+                openBtn:SetSize(44, 18)
+                openBtn:SetPoint("RIGHT", -4, 0)
                 openBtn:SetText("Open")
                 openBtn:SetScript("OnClick", function()
                     self:OpenProfessionSpecTree(profName, tree.tabID)
                 end)
-                textRight = -46
+                textRight = -52
             end
 
-            local tName = chip:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            tName:SetPoint("TOPLEFT", textLeft, -4)
-            tName:SetPoint("RIGHT", textRight, 0)
-            tName:SetJustifyH("LEFT")
-            tName:SetText(tree.name or "?")
-            tName:SetTextColor(1, 0.88, 0.5)
-
-            local tMeta = chip:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-            tMeta:SetPoint("BOTTOMLEFT", textLeft, 4)
-            tMeta:SetPoint("RIGHT", textRight, 0)
-            tMeta:SetJustifyH("LEFT")
-            -- unlockSkill = profession skill to unlock the tree (not spent KP)
-            local bits = {}
-            if tree.maxKP then
-                bits[#bits + 1] = tree.maxKP .. " KP max"
-            end
-            if tree.unlockSkill then
-                bits[#bits + 1] = "unlock " .. tree.unlockSkill
-            end
-            tMeta:SetText(table.concat(bits, " | "))
-
-            -- Live root progress if available
+            local liveStr = nil
+            local rootSpent, rootMax = 0, tree.maxKP or 0
             if learned and tree.rootNodeID and tree.rootNodeID > 0 then
                 local prog = self:GetPathProgress(profName, tree.rootNodeID)
-                if prog and prog.max > 0 then
-                    local frac = prog.spent / prog.max
-                    if frac >= 1 then
-                        chip:SetBackdropBorderColor(0.25, 0.65, 0.35, 1)
-                    elseif prog.spent > 0 then
-                        chip:SetBackdropBorderColor(0.85, 0.70, 0.25, 1)
+                if prog then
+                    rootSpent = prog.spent or 0
+                    if (prog.max or 0) > 0 then
+                        rootMax = prog.max
                     end
                 end
             end
+            if rootMax > 0 then
+                liveStr = string.format("%d / %d", rootSpent, rootMax)
+            elseif tree.maxKP then
+                liveStr = tree.maxKP .. " KP"
+            end
 
-            chip:SetScript("OnEnter", function(b)
-                GameTooltip:SetOwner(b, "ANCHOR_BOTTOM")
+            local kpFS = nil
+            if liveStr then
+                kpFS = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                kpFS:SetPoint("RIGHT", textRight, 0)
+                kpFS:SetJustifyH("RIGHT")
+                kpFS:SetText(liveStr)
+                if rootMax > 0 and rootSpent >= rootMax then
+                    kpFS:SetTextColor(0.40, 0.85, 0.50)
+                    row:SetBackdropBorderColor(0.25, 0.55, 0.32, 0.9)
+                elseif rootSpent > 0 then
+                    kpFS:SetTextColor(0.95, 0.82, 0.40)
+                    row:SetBackdropBorderColor(0.70, 0.55, 0.22, 0.85)
+                else
+                    kpFS:SetTextColor(0.55, 0.55, 0.58)
+                end
+            end
+
+            local tName = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            tName:SetPoint("LEFT", textLeft, 0)
+            if kpFS then
+                tName:SetPoint("RIGHT", kpFS, "LEFT", -10, 0)
+            else
+                tName:SetPoint("RIGHT", textRight, 0)
+            end
+            tName:SetJustifyH("LEFT")
+            tName:SetWordWrap(false)
+            tName:SetText(tree.name or "?")
+            tName:SetTextColor(1, 0.90, 0.55)
+
+            row:SetScript("OnEnter", function(b)
+                b:SetBackdropColor(0.14, 0.15, 0.20, 0.95)
+                GameTooltip:SetOwner(b, "ANCHOR_CURSOR")
                 GameTooltip:AddLine(tree.name or "Tree", 1, 0.85, 0.2)
                 if tree.summary then
                     GameTooltip:AddLine(tree.summary, 0.8, 0.8, 0.8, true)
                 end
                 if tree.maxKP then
-                    GameTooltip:AddLine(string.format("Max knowledge in this tree: %d", tree.maxKP), 0.6, 0.75, 0.9)
+                    GameTooltip:AddLine(string.format("Capacity: %d KP", tree.maxKP), 0.6, 0.75, 0.9)
                 end
                 if tree.unlockSkill then
-                    GameTooltip:AddLine(string.format("Unlocks at profession skill %d", tree.unlockSkill), 0.7, 0.7, 0.7)
+                    GameTooltip:AddLine(string.format("Unlocks at profession skill %d", tree.unlockSkill), 0.65, 0.65, 0.65)
                 end
-                if learned and tree.rootNodeID and tree.rootNodeID > 0 then
-                    local prog = self:GetPathProgress(profName, tree.rootNodeID)
-                    if prog then
-                        GameTooltip:AddLine(string.format(
-                            "Root progress: %d / %d", prog.spent or 0, prog.max or 0
-                        ), 0.45, 0.85, 0.55)
-                    end
+                if learned and rootMax > 0 then
+                    GameTooltip:AddLine(string.format("Root path: %d / %d", rootSpent, rootMax), 0.45, 0.85, 0.55)
+                end
+                if learned and tree.tabID and tree.tabID > 0 then
+                    GameTooltip:AddLine("Open → profession UI", 0.5, 0.7, 1)
                 end
                 GameTooltip:Show()
             end)
-            chip:SetScript("OnLeave", function() GameTooltip:Hide() end)
+            row:SetScript("OnLeave", function(b)
+                b:SetBackdropColor(0.10, 0.11, 0.15, 0.9)
+                GameTooltip:Hide()
+            end)
 
+            yTop = yTop - rowH - gap
         end
-        if col > 0 then
-            chipY = chipY - chipH - gap
-        end
-        yTop = chipY - 8
+        yTop = yTop - 4
     end
 
-    -- Divider
+    -- Divider between trees and build
     local div = main:CreateTexture(nil, "ARTWORK")
-    div:SetColorTexture(0.45, 0.38, 0.2, 0.55)
+    div:SetColorTexture(0.40, 0.35, 0.22, 0.45)
     div:SetHeight(1)
     div:SetPoint("TOPLEFT", 14, yTop)
     div:SetPoint("TOPRIGHT", -14, yTop)
+    yTop = yTop - 10
 
     -- Build progress: sum min(spent, target) over steps vs total target KP
     local buildSpent, buildTarget, buildStepsDone, buildStepsTotal = 0, 0, 0, 0
@@ -698,60 +789,76 @@ function addon:BuildSpecializations()
     end
 
     local stepHdr = main:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    stepHdr:SetPoint("TOPLEFT", 14, yTop - 10)
+    stepHdr:SetPoint("TOPLEFT", 14, yTop)
     if selectedBuild then
-        stepHdr:SetText("|cffFFD700" .. (selectedBuild.name or "Build") .. "|r  -  Spend order")
+        stepHdr:SetText("|cffFFD700" .. (selectedBuild.name or "Build") .. "|r")
     else
         stepHdr:SetText("|cffFFD700Spend order|r")
     end
 
-    local yAfterHdr = yTop - 28
+    local yAfterHdr = yTop - 18
 
-    -- Progress line + thin bar (right of header area)
     if selectedBuild and buildTarget > 0 then
         local frac = math.min(1, buildSpent / buildTarget)
         local progLabel = main:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        progLabel:SetPoint("TOPRIGHT", -14, yTop - 10)
+        progLabel:SetPoint("TOPRIGHT", -14, yTop)
         if buildSpent >= buildTarget then
-            progLabel:SetText(string.format("|cff55ee77%d / %d KP|r  (%d/%d steps)",
+            progLabel:SetText(string.format("|cff55ee77%d / %d KP|r  ·  %d/%d steps",
                 buildSpent, buildTarget, buildStepsDone, buildStepsTotal))
         else
-            progLabel:SetText(string.format("|cffFFD700%d|r / %d KP  (%d/%d steps)",
+            progLabel:SetText(string.format("|cffFFD700%d|r / %d KP  ·  %d/%d steps",
                 buildSpent, buildTarget, buildStepsDone, buildStepsTotal))
         end
 
-        local barW = 160
-        local barBg = main:CreateTexture(nil, "ARTWORK")
-        barBg:SetColorTexture(0.15, 0.15, 0.18, 0.9)
-        barBg:SetSize(barW, 6)
-        barBg:SetPoint("TOPRIGHT", -14, yTop - 26)
+        -- Frame track: Textures cannot use OnSizeChanged / HookScript
+        local barTrack = CreateFrame("Frame", nil, main)
+        barTrack:SetHeight(5)
+        barTrack:SetPoint("TOPLEFT", 14, yTop - 18)
+        barTrack:SetPoint("TOPRIGHT", -14, yTop - 18)
 
-        local barFill = main:CreateTexture(nil, "OVERLAY")
+        local barBg = barTrack:CreateTexture(nil, "ARTWORK")
+        barBg:SetAllPoints()
+        barBg:SetColorTexture(0.14, 0.14, 0.17, 0.95)
+
+        local barFill = barTrack:CreateTexture(nil, "OVERLAY")
         if frac >= 1 then
             barFill:SetColorTexture(0.25, 0.75, 0.40, 0.95)
         else
             barFill:SetColorTexture(0.90, 0.72, 0.25, 0.95)
         end
-        barFill:SetHeight(6)
-        barFill:SetWidth(math.max(2, barW * frac))
-        barFill:SetPoint("LEFT", barBg, "LEFT", 0, 0)
+        barFill:SetHeight(5)
+        barFill:SetPoint("TOPLEFT", barTrack, "TOPLEFT", 0, 0)
+        barFill:SetWidth(2)
+        barTrack:SetScript("OnSizeChanged", function(f, w)
+            barFill:SetWidth(math.max(2, (w or 0) * frac))
+        end)
+        C_Timer.After(0, function()
+            local w = barTrack:GetWidth() or 0
+            if w > 0 then barFill:SetWidth(math.max(2, w * frac)) end
+        end)
 
-        yAfterHdr = yTop - 38
+        yAfterHdr = yTop - 30
     end
 
-    if selectedBuild and (selectedBuild.summary or selectedBuild.goal) then
+    -- Center blurb only when summary adds more than the card goal line
+    if selectedBuild and selectedBuild.summary and selectedBuild.summary ~= ""
+        and selectedBuild.summary ~= selectedBuild.goal then
         local sum = main:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         sum:SetPoint("TOPLEFT", 14, yAfterHdr)
         sum:SetPoint("RIGHT", -14, 0)
         sum:SetJustifyH("LEFT")
-        sum:SetTextColor(0.72, 0.72, 0.72)
-        local raw = selectedBuild.summary or selectedBuild.goal or ""
-        raw = raw:gsub("→", "->"):gsub("—", "-"):gsub("–", "-")
+        sum:SetTextColor(0.62, 0.62, 0.65)
+        local raw = selectedBuild.summary:gsub("→", "->"):gsub("—", "-"):gsub("–", "-")
         sum:SetText(raw)
-        yAfterHdr = yAfterHdr - 22
+        yAfterHdr = yAfterHdr - 16
     end
 
-    -- Column headers: # | WHERE (flex) | LIVE | NEED — NEED/LIVE anchored from the right
+    local orderLbl = main:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    orderLbl:SetPoint("TOPLEFT", 14, yAfterHdr)
+    orderLbl:SetText("|cff888888SPEND ORDER|r")
+    yAfterHdr = yAfterHdr - 14
+
+    -- Column headers: # | WHERE (flex) | LIVE | NEED
     local NEED_W, LIVE_W, COL_GAP = 48, 60, 10
     local colHdr = CreateFrame("Frame", nil, main)
     colHdr:SetPoint("TOPLEFT", 12, yAfterHdr)
@@ -791,7 +898,6 @@ function addon:BuildSpecializations()
     list:SetHeight(1)
     scroll:SetScrollChild(list)
 
-    -- Keep list width in sync with scroll (handles first layout + resize)
     local function SyncListWidth()
         local w = scroll:GetWidth() or 0
         if w > 16 then
@@ -804,7 +910,6 @@ function addon:BuildSpecializations()
     local steps = selectedBuild and selectedBuild.steps or {}
     local y = -4
 
-    -- First incomplete step index (for NEXT highlight)
     local nextStepIndex = nil
     for i, step in ipairs(steps) do
         local target = step.points or 0
@@ -813,8 +918,7 @@ function addon:BuildSpecializations()
             local prog = self:GetPathProgress(profName, step.pathID)
             if prog then spent = prog.spent or 0 end
         end
-        local done = (target > 0 and spent >= target)
-            or (target == 0 and spent > 0)
+        local done = (target > 0 and spent >= target) or (target == 0 and spent > 0)
         if not done then
             nextStepIndex = i
             break
@@ -823,7 +927,7 @@ function addon:BuildSpecializations()
 
     for i, step in ipairs(steps) do
         local row = CreateFrame("Button", nil, list, "BackdropTemplate")
-        row:SetHeight(42)
+        row:SetHeight(38)
         row:SetPoint("TOPLEFT", 4, y)
         row:SetPoint("TOPRIGHT", -4, y)
         row:SetBackdrop({
@@ -872,7 +976,6 @@ function addon:BuildSpecializations()
             nextTag:SetText("|cffFFD700NEXT|r")
         end
 
-        -- NEED / LIVE anchored from the right so columns survive resize
         local pts = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         pts:SetPoint("RIGHT", -8, 0)
         pts:SetWidth(NEED_W)
@@ -899,7 +1002,6 @@ function addon:BuildSpecializations()
             liveFS:SetTextColor(0.45, 0.45, 0.45)
         end
 
-        -- Tree icon for this spend step
         local stepTree = FindTree(guide, step.tree)
         local stepIcon = GetTreeIcon(stepTree)
         local nameLeft = 28
@@ -942,24 +1044,28 @@ function addon:BuildSpecializations()
             GameTooltip:SetOwner(b, "ANCHOR_CURSOR")
             GameTooltip:AddLine(whereText, 1, 0.85, 0.2)
             if isNext then
-                GameTooltip:AddLine("Next recommended spend", 1, 0.85, 0.3)
+                GameTooltip:AddLine("Next spend", 1, 0.85, 0.3)
             end
-            GameTooltip:AddLine("Target +" .. tostring(target) .. " knowledge", 0.45, 0.85, 0.55)
             if progress then
-                GameTooltip:AddLine(string.format(
-                    "Live: %d / %d spent on this path", progress.spent or 0, progress.max or 0
-                ), 0.6, 0.8, 1)
+                GameTooltip:AddDoubleLine(
+                    "Live",
+                    string.format("%d / %d", progress.spent or 0, progress.max or 0),
+                    0.65, 0.75, 0.9, 0.9, 0.9, 0.9
+                )
+                GameTooltip:AddDoubleLine("Need", "+" .. tostring(target), 0.45, 0.85, 0.55, 0.45, 0.85, 0.55)
                 if progress.isLocked then
-                    GameTooltip:AddLine("Path locked", 1, 0.4, 0.4)
+                    GameTooltip:AddLine("Locked", 1, 0.4, 0.4)
                 elseif progress.canPurchase then
-                    GameTooltip:AddLine("Can spend knowledge here", 0.4, 0.9, 0.5)
+                    GameTooltip:AddLine("Can spend here", 0.4, 0.9, 0.5)
                 end
+            else
+                GameTooltip:AddLine("Need +" .. tostring(target), 0.45, 0.85, 0.55)
             end
             if step.note and step.note ~= "" then
-                GameTooltip:AddLine(step.note, 0.8, 0.8, 0.8, true)
+                GameTooltip:AddLine(step.note, 0.75, 0.75, 0.75, true)
             end
             if learned and stepTab and stepTab > 0 then
-                GameTooltip:AddLine("Click to open this tree in the profession UI", 0.5, 0.7, 1)
+                GameTooltip:AddLine("Click to open tree", 0.5, 0.7, 1)
             end
             GameTooltip:Show()
         end)
@@ -970,14 +1076,14 @@ function addon:BuildSpecializations()
             end)
         end
 
-        y = y - 46
+        y = y - 40
     end
 
     if #steps == 0 then
         local no = list:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         no:SetPoint("TOPLEFT", 8, y)
         no:SetTextColor(0.6, 0.6, 0.6)
-        no:SetText("No steps defined for this build yet.")
+        no:SetText("This goal has no spend order yet. Pick another goal, or check back after a data update.")
         y = y - 24
     end
     list:SetHeight(math.max(40, -y + 8))
@@ -991,6 +1097,7 @@ function addon:BuildSpecializations()
         f:SetVerticalScroll(newScroll)
     end)
 end
+
 
 if type(addon.BuildSpecializations) == "function" then
     private.Specializations.BuildSpecializations = addon.BuildSpecializations
